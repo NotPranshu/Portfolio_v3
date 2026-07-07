@@ -1,0 +1,2535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CASE FILE — UNDER INVESTIGATION</title>
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Oswald:wght@300;400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --void: #0A0A0A;
+    --panel: #0F0F1A;
+    --amber: #F5A623;
+    --amber-dim: #A86E0F;
+    --green: #00FF41;
+    --green-dim: #00A329;
+    --red: #FF2233;
+    --crimson: #8B0000;
+    --glass: rgba(245,166,35,0.05);
+    --glass-border: rgba(245,166,35,0.15);
+    --text-primary: #E8E0C8;
+    --text-muted: #7A7060;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--void);
+    color: var(--text-primary);
+    font-family: 'Courier Prime', monospace;
+    overflow-x: hidden;
+    cursor: crosshair;
+  }
+
+  /* ─── SCANLINE OVERLAY ─── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+    animation: scanlines 0.1s linear infinite;
+  }
+
+  @keyframes scanlines {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(4px); }
+  }
+
+  /* ─── INTRO CUTSCENE ─── */
+  #intro {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+
+  #intro.fade-out {
+    animation: fadeToVoid 1.2s ease-in forwards;
+  }
+
+  @keyframes fadeToVoid {
+    0% { opacity: 1; }
+    80% { opacity: 1; }
+    100% { opacity: 0; pointer-events: none; }
+  }
+
+  .terminal-window {
+    width: 100%;
+    max-width: 680px;
+    border: 1px solid var(--green-dim);
+    background: rgba(0,20,0,0.8);
+    padding: 2rem;
+    position: relative;
+  }
+
+  .terminal-window::before {
+    content: 'CLASSIFIED — FORENSICS SYSTEM v2.7.1';
+    position: absolute;
+    top: -1px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #000;
+    padding: 0 1rem;
+    color: var(--green-dim);
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .terminal-bar {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(0,255,65,0.2);
+  }
+
+  .t-dot { width: 12px; height: 12px; border-radius: 50%; }
+  .t-dot.r { background: #ff5f57; }
+  .t-dot.y { background: #febc2e; }
+  .t-dot.g { background: #28c840; }
+
+  #terminal-text {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--green);
+    line-height: 2;
+    min-height: 220px;
+  }
+
+  .term-line { display: block; opacity: 0; }
+  .term-line.visible { opacity: 1; }
+  .term-line.error { color: var(--red); }
+  .term-line.amber { color: var(--amber); }
+  .term-line.success { color: #00FF41; font-weight: bold; }
+  .term-line.big {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.8rem;
+    letter-spacing: 0.3em;
+    color: var(--amber);
+    text-shadow: 0 0 30px rgba(245,166,35,0.8);
+    animation: glitchAmber 0.5s ease;
+  }
+
+  @keyframes glitchAmber {
+    0%,100% { transform: translateX(0); filter: none; }
+    20% { transform: translateX(-4px); filter: hue-rotate(90deg); }
+    40% { transform: translateX(4px); filter: hue-rotate(-90deg); }
+    60% { transform: translateX(-2px); filter: none; }
+  }
+
+  .cursor-blink {
+    display: inline-block;
+    width: 8px;
+    height: 1em;
+    background: var(--green);
+    animation: blink 0.8s step-end infinite;
+    vertical-align: text-bottom;
+  }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  /* ─── MAIN INTERFACE ─── */
+  #main {
+    opacity: 0;
+    transition: opacity 1s ease 0.5s;
+  }
+
+  #main.visible { opacity: 1; }
+
+  /* ─── HEADER ─── */
+  header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    background: rgba(10,10,10,0.95);
+    border-bottom: 1px solid var(--glass-border);
+    backdrop-filter: blur(10px);
+    padding: 0.75rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header-badge {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .badge-icon {
+    width: 36px;
+    height: 36px;
+    border: 2px solid var(--amber);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    animation: badgePulse 3s ease-in-out infinite;
+  }
+
+  @keyframes badgePulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(245,166,35,0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(245,166,35,0); }
+  }
+
+  .badge-text {
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    color: var(--amber);
+  }
+
+  .badge-name {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: 0.1em;
+  }
+
+  .status-tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    padding: 0.25rem 0.75rem;
+    border: 1px solid;
+    letter-spacing: 0.15em;
+  }
+
+  .status-tag.open {
+    color: var(--amber);
+    border-color: var(--amber);
+    background: rgba(245,166,35,0.08);
+    animation: statusPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes statusPulse {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+
+  nav {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+  }
+
+  nav a {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    letter-spacing: 0.1em;
+    transition: color 0.3s;
+    cursor: crosshair;
+    padding: 0.25rem 0;
+    border-bottom: 1px solid transparent;
+  }
+
+  nav a:hover {
+    color: var(--amber);
+    border-color: var(--amber);
+  }
+
+  /* ─── SEARCH BAR ─── */
+  .search-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .search-wrap input {
+    background: rgba(245,166,35,0.05);
+    border: 1px solid var(--glass-border);
+    color: var(--amber);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.7rem;
+    padding: 0.4rem 1rem 0.4rem 2.2rem;
+    letter-spacing: 0.05em;
+    outline: none;
+    width: 200px;
+    transition: all 0.3s;
+  }
+
+  .search-wrap input:focus {
+    border-color: var(--amber);
+    background: rgba(245,166,35,0.1);
+    box-shadow: 0 0 20px rgba(245,166,35,0.2);
+  }
+
+  .search-wrap input::placeholder { color: var(--amber-dim); }
+  .search-icon {
+    position: absolute;
+    left: 0.6rem;
+    color: var(--amber-dim);
+    font-size: 0.8rem;
+    pointer-events: none;
+  }
+
+  /* ─── SEARCH RESULTS ─── */
+  #search-results {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 380px;
+    background: var(--panel);
+    border: 1px solid var(--amber);
+    z-index: 200;
+    display: none;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  #search-results.visible { display: block; }
+  .sr-header {
+    padding: 0.75rem 1rem;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--amber);
+    border-bottom: 1px solid var(--glass-border);
+    letter-spacing: 0.15em;
+  }
+
+  .sr-item {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(245,166,35,0.08);
+    cursor: crosshair;
+    transition: background 0.2s;
+  }
+
+  .sr-item:hover { background: rgba(245,166,35,0.08); }
+  .sr-type {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.55rem;
+    color: var(--amber-dim);
+    letter-spacing: 0.2em;
+  }
+
+  .sr-name {
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    margin: 0.1rem 0;
+  }
+
+  .sr-link {
+    font-size: 0.65rem;
+    color: var(--green-dim);
+    letter-spacing: 0.1em;
+  }
+
+  /* ─── HERO / INVESTIGATION BOARD ─── */
+  #board {
+    padding: 5rem 2rem 3rem;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .board-header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .classified-stamp {
+    display: inline-block;
+    border: 3px solid var(--red);
+    color: var(--red);
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.4em;
+    padding: 0.3rem 1rem;
+    transform: rotate(-2deg);
+    margin-bottom: 1.5rem;
+    text-shadow: 0 0 20px rgba(255,34,51,0.5);
+    box-shadow: 0 0 20px rgba(255,34,51,0.2);
+    animation: stampFlicker 4s ease-in-out infinite;
+  }
+
+  @keyframes stampFlicker {
+    0%,90%,100% { opacity: 1; }
+    92% { opacity: 0.7; }
+    94% { opacity: 1; }
+    96% { opacity: 0.5; }
+    98% { opacity: 1; }
+  }
+
+  .case-number {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    letter-spacing: 0.3em;
+    margin-bottom: 0.75rem;
+  }
+
+  h1 {
+    font-family: 'Oswald', sans-serif;
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: 0.05em;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+  }
+
+  h1 .highlight {
+    color: var(--amber);
+    text-shadow: 0 0 40px rgba(245,166,35,0.6);
+  }
+
+  .board-sub {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    letter-spacing: 0.2em;
+    margin-top: 1rem;
+  }
+
+  /* ─── EVIDENCE BOARD SVG ─── */
+  #evidence-board {
+    width: 100%;
+    max-width: 900px;
+    aspect-ratio: 16/9;
+    position: relative;
+  }
+
+  #evidence-svg {
+    width: 100%;
+    height: 100%;
+    cursor: crosshair;
+  }
+
+  /* Node styles */
+  .node-circle {
+    transition: all 0.3s;
+    cursor: crosshair;
+  }
+
+  .node-circle:hover { filter: brightness(1.4); }
+
+  .node-label {
+    font-family: 'Oswald', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    pointer-events: none;
+    text-anchor: middle;
+  }
+
+  .node-sub {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 7px;
+    letter-spacing: 0.5px;
+    pointer-events: none;
+    text-anchor: middle;
+    fill: rgba(232,224,200,0.5);
+  }
+
+  .thread {
+    stroke-dasharray: 6 4;
+    animation: threadMove 3s linear infinite;
+  }
+
+  @keyframes threadMove {
+    to { stroke-dashoffset: -40; }
+  }
+
+  .node-pulse {
+    animation: nodePulse 2.5s ease-in-out infinite;
+  }
+
+  @keyframes nodePulse {
+    0%,100% { r: 40; opacity: 0.15; }
+    50% { r: 54; opacity: 0; }
+  }
+
+  /* ─── SECTIONS ─── */
+  section {
+    padding: 5rem 2rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+  }
+
+  .section-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--amber);
+    letter-spacing: 0.3em;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    border-left: 2px solid var(--amber);
+    padding: 0.5rem 0.4rem;
+  }
+
+  h2 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: 0.05em;
+  }
+
+  h2 span { color: var(--amber); }
+
+  .section-rule {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, var(--amber-dim), transparent);
+  }
+
+  /* ─── CASE FILES (PROJECTS) ─── */
+  .cases-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .case-card {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    padding: 1.5rem;
+    position: relative;
+    transition: all 0.3s;
+    cursor: crosshair;
+    overflow: hidden;
+  }
+
+  .case-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(245,166,35,0.03) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .case-card:hover {
+    border-color: var(--amber);
+    background: rgba(245,166,35,0.08);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(245,166,35,0.15);
+  }
+
+  .case-card:hover .case-corner { opacity: 1; }
+
+  .case-corner {
+    position: absolute;
+    top: 0; right: 0;
+    width: 0; height: 0;
+    border-left: 40px solid transparent;
+    border-top: 40px solid var(--amber);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .case-id {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--amber-dim);
+    letter-spacing: 0.3em;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .case-status {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.55rem;
+    padding: 0.2rem 0.5rem;
+    border: 1px solid;
+    letter-spacing: 0.15em;
+  }
+
+  .case-status.solved {
+    color: var(--green);
+    border-color: var(--green-dim);
+    background: rgba(0,255,65,0.05);
+  }
+
+  .case-status.open {
+    color: var(--amber);
+    border-color: var(--amber-dim);
+    background: rgba(245,166,35,0.05);
+    animation: statusPulse 2s ease-in-out infinite;
+  }
+
+  .case-status.cold {
+    color: #4A90D9;
+    border-color: #2A5090;
+    background: rgba(74,144,217,0.05);
+  }
+
+  .case-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: 0.05em;
+    margin-bottom: 0.75rem;
+  }
+
+  .case-desc {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+    margin-bottom: 1rem;
+  }
+
+  .evidence-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 1rem;
+  }
+
+  .etag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem;
+    padding: 0.2rem 0.6rem;
+    background: rgba(245,166,35,0.08);
+    border: 1px solid rgba(245,166,35,0.2);
+    color: var(--amber-dim);
+    letter-spacing: 0.1em;
+  }
+
+  .case-footer {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px solid var(--glass-border);
+    padding-top: 0.75rem;
+    margin-top: auto;
+  }
+
+  /* ─── SKILLS EVIDENCE NETWORK ─── */
+  .skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+  }
+
+  .skill-node {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    padding: 1.25rem;
+    position: relative;
+    transition: all 0.3s;
+    cursor: crosshair;
+  }
+
+  .skill-node:hover {
+    border-color: var(--green);
+    background: rgba(0,255,65,0.05);
+    box-shadow: 0 0 20px rgba(0,255,65,0.1);
+  }
+
+  .skill-category {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.55rem;
+    color: var(--green-dim);
+    letter-spacing: 0.25em;
+    margin-bottom: 0.5rem;
+  }
+
+  .skill-name {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+  }
+
+  .skill-bar-wrap {
+    height: 3px;
+    background: rgba(0,255,65,0.1);
+    margin-bottom: 0.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .skill-bar-fill {
+    height: 100%;
+    background: linear-gradient(to right, var(--green-dim), var(--green));
+    transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+  }
+
+  .skill-bar-fill::after {
+    content: '';
+    position: absolute;
+    right: 0; top: 0; bottom: 0;
+    width: 20px;
+    background: linear-gradient(to right, transparent, rgba(0,255,65,0.8));
+    animation: shimmer 2s ease-in-out infinite;
+  }
+
+  @keyframes shimmer {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  .skill-evidence {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+  }
+
+  .skill-evidence span { color: var(--green-dim); }
+
+  /* ─── INCIDENT REPORTS ─── */
+  .incidents-list { display: flex; flex-direction: column; gap: 1.5rem; }
+
+  .incident {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-left: 3px solid var(--crimson);
+    padding: 1.5rem;
+    position: relative;
+    transition: all 0.3s;
+    cursor: crosshair;
+  }
+
+  .incident:hover {
+    border-color: var(--amber);
+    border-left-color: var(--amber);
+    background: rgba(245,166,35,0.05);
+  }
+
+  .incident-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    gap: 1rem;
+  }
+
+  .incident-id {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--crimson);
+    letter-spacing: 0.2em;
+  }
+
+  .incident-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0.25rem 0;
+  }
+
+  .incident-severity {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem;
+    padding: 0.25rem 0.6rem;
+    border: 1px solid var(--crimson);
+    color: var(--crimson);
+    background: rgba(139,0,0,0.1);
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+  }
+
+  .incident-body { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+  @media(max-width:700px){ .incident-body { grid-template-columns: 1fr; } }
+
+  .incident-field { display: flex; flex-direction: column; gap: 0.5rem; }
+  .incident-field-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--amber-dim);
+    letter-spacing: 0.2em;
+    margin-bottom: 0.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .incident-field-label::before {
+    content: '▸';
+    color: var(--amber);
+  }
+
+  .incident-field p {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  /* ─── WITNESS STATEMENTS ─── */
+  .witnesses-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .witness {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    padding: 1.5rem;
+    position: relative;
+    transition: border-color 0.3s;
+  }
+
+  .witness:hover { border-color: rgba(245,166,35,0.4); }
+
+  .witness-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--glass-border);
+  }
+
+  .witness-avatar {
+    width: 44px;
+    height: 44px;
+    border: 2px solid var(--amber-dim);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.1rem;
+    color: var(--amber);
+    background: rgba(245,166,35,0.05);
+    flex-shrink: 0;
+  }
+
+  .witness-meta { flex: 1; }
+  .witness-name {
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .witness-role {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    margin-top: 0.2rem;
+  }
+
+  .interview-tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.55rem;
+    color: var(--green-dim);
+    letter-spacing: 0.2em;
+    border: 1px solid var(--green-dim);
+    padding: 0.2rem 0.4rem;
+    background: rgba(0,255,65,0.05);
+  }
+
+  .witness-q {
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.72rem;
+    color: var(--amber-dim);
+    font-style: italic;
+    margin-bottom: 0.5rem;
+  }
+
+  .witness-a {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+    position: relative;
+    padding-left: 1rem;
+  }
+
+  .witness-a::before {
+    content: '"';
+    position: absolute;
+    left: 0;
+    top: -0.1rem;
+    font-size: 1.5rem;
+    color: var(--amber-dim);
+    font-family: Georgia, serif;
+    line-height: 1;
+  }
+
+  /* ─── TIMELINE ─── */
+  .timeline {
+    position: relative;
+    padding-left: 3rem;
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 1rem;
+    top: 0; bottom: 0;
+    width: 1px;
+    background: linear-gradient(to bottom, transparent, var(--amber-dim), transparent);
+  }
+
+  .tl-event {
+    position: relative;
+    margin-bottom: 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--glass-border);
+  }
+
+  .tl-event:last-child { border-bottom: none; }
+
+  .tl-dot {
+    position: absolute;
+    left: -2.5rem;
+    top: 0.25rem;
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--amber);
+    background: var(--void);
+    transform: rotate(45deg);
+  }
+
+  .tl-dot.active {
+    background: var(--amber);
+    box-shadow: 0 0 15px rgba(245,166,35,0.6);
+    animation: dotPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes dotPulse {
+    0%,100% { box-shadow: 0 0 15px rgba(245,166,35,0.6); }
+    50% { box-shadow: 0 0 30px rgba(245,166,35,0.9); }
+  }
+
+  .tl-date {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--amber-dim);
+    letter-spacing: 0.2em;
+    margin-bottom: 0.4rem;
+  }
+
+  .tl-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.4rem;
+  }
+
+  .tl-desc {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+
+  /* ─── FINAL REPORT ─── */
+  #report {
+    background: rgba(10,10,10,0.9);
+    border: 1px solid var(--amber);
+    margin: 2rem;
+    padding: 3rem;
+    position: relative;
+    max-width: 900px;
+    margin: 0 auto 4rem;
+  }
+
+  #report::before {
+    content: '';
+    position: absolute;
+    inset: 6px;
+    border: 1px solid rgba(245,166,35,0.15);
+    pointer-events: none;
+  }
+
+  .report-stamp {
+    position: absolute;
+    top: 2rem; right: 2rem;
+    transform: rotate(15deg);
+    border: 4px solid var(--green);
+    color: var(--green);
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    padding: 0.5rem 1rem;
+    text-shadow: 0 0 20px rgba(0,255,65,0.6);
+    box-shadow: 0 0 20px rgba(0,255,65,0.2);
+    opacity: 0.9;
+  }
+
+  .report-title {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--amber-dim);
+    letter-spacing: 0.3em;
+    margin-bottom: 1rem;
+  }
+
+  h3 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 2rem;
+  }
+
+  .report-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  @media(max-width:600px){ .report-grid { grid-template-columns: 1fr; } }
+
+  .report-field {
+    border-bottom: 1px solid var(--glass-border);
+    padding-bottom: 1rem;
+  }
+
+  .rf-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--amber-dim);
+    letter-spacing: 0.25em;
+    margin-bottom: 0.4rem;
+  }
+
+  .rf-value {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+  }
+
+  .rf-value.green { color: var(--green); }
+
+  .report-assessment {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    line-height: 1.8;
+    border: 1px solid var(--glass-border);
+    padding: 1.25rem;
+    background: rgba(245,166,35,0.03);
+    margin-bottom: 2rem;
+  }
+
+  .report-assessment strong { color: var(--amber); font-weight: 700; }
+
+  .report-cta {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    padding: 0.75rem 2rem;
+    border: none;
+    cursor: crosshair;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s;
+  }
+
+  .btn-primary {
+    background: var(--amber);
+    color: var(--void);
+  }
+
+  .btn-primary:hover {
+    background: var(--text-primary);
+    box-shadow: 0 0 30px rgba(245,166,35,0.4);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--amber);
+    border: 1px solid var(--amber);
+  }
+
+  .btn-ghost:hover {
+    background: rgba(245,166,35,0.1);
+    box-shadow: 0 0 20px rgba(245,166,35,0.2);
+  }
+
+  /* ─── FOOTER ─── */
+  footer {
+    text-align: center;
+    padding: 2rem;
+    border-top: 1px solid var(--glass-border);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    letter-spacing: 0.15em;
+  }
+
+  footer span { color: var(--amber-dim); }
+
+  /* ─── GLITCH UTILITY ─── */
+  .glitch {
+    position: relative;
+    display: inline-block;
+  }
+
+  .glitch:hover::before,
+  .glitch:hover::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+  }
+
+  .glitch:hover::before {
+    color: var(--red);
+    clip-path: polygon(0 30%, 100% 30%, 100% 50%, 0 50%);
+    transform: translateX(-3px);
+    animation: glitchBefore 0.3s steps(1) infinite;
+  }
+
+  .glitch:hover::after {
+    color: var(--green);
+    clip-path: polygon(0 60%, 100% 60%, 100% 75%, 0 75%);
+    transform: translateX(3px);
+    animation: glitchAfter 0.3s steps(1) infinite;
+  }
+
+  @keyframes glitchBefore {
+    0%,100% { transform: translateX(-3px); }
+    50% { transform: translateX(3px); }
+  }
+  @keyframes glitchAfter {
+    0%,100% { transform: translateX(3px); }
+    50% { transform: translateX(-3px); }
+  }
+
+  /* ─── MODAL ─── */
+  #modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 9000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    backdrop-filter: blur(4px);
+  }
+
+  #modal-overlay.visible { display: flex; }
+
+  .modal-box {
+    background: var(--panel);
+    border: 1px solid var(--amber);
+    max-width: 600px;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    padding: 2rem;
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 1rem; right: 1rem;
+    background: none;
+    border: 1px solid var(--amber-dim);
+    color: var(--amber);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.7rem;
+    padding: 0.3rem 0.6rem;
+    cursor: crosshair;
+    letter-spacing: 0.1em;
+  }
+
+  .modal-close:hover { background: rgba(245,166,35,0.1); }
+
+  #modal-content h4 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.4rem;
+    color: var(--amber);
+    margin-bottom: 0.25rem;
+  }
+
+  #modal-content .modal-id {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    letter-spacing: 0.2em;
+    margin-bottom: 1.5rem;
+  }
+
+  #modal-content p {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    line-height: 1.8;
+    margin-bottom: 1rem;
+  }
+
+  #modal-content .detail-row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+    align-items: flex-start;
+  }
+
+  #modal-content .detail-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--amber-dim);
+    letter-spacing: 0.15em;
+    min-width: 100px;
+    padding-top: 0.1rem;
+  }
+
+  #modal-content .detail-val {
+    font-size: 0.8rem;
+    color: var(--text-primary);
+    line-height: 1.6;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: var(--void); }
+  ::-webkit-scrollbar-thumb { background: var(--amber-dim); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--amber); }
+
+  /* ─── CRIMINAL PROFILE ─── */
+  #criminal-profile {
+    padding: 5rem 2rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .cp-outer {
+    border: 1px solid var(--amber);
+    background: rgba(10,10,10,0.7);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cp-outer::before {
+    content: '';
+    position: absolute;
+    inset: 5px;
+    border: 1px solid rgba(245,166,35,0.12);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* animated corner scanline */
+  .cp-outer::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 60%;
+    height: 2px;
+    background: linear-gradient(to right, transparent, rgba(245,166,35,0.6), transparent);
+    animation: cpScan 4s ease-in-out infinite;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  @keyframes cpScan {
+    0%   { left: -60%; top: 0; }
+    25%  { left: 100%; top: 0; }
+    26%  { left: 100%; top: 0; }
+    50%  { left: 100%; top: 100%; }
+    51%  { left: -60%; top: 100%; }
+    75%  { left: -60%; top: 0; }
+    100% { left: -60%; top: 0; }
+  }
+
+  .cp-tape {
+    background: var(--crimson);
+    padding: 0.4rem 2rem;
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.4em;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    z-index: 2;
+  }
+
+  .cp-tape-blink {
+    animation: statusPulse 1.5s ease-in-out infinite;
+  }
+
+  .cp-body {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 0;
+    position: relative;
+    z-index: 2;
+  }
+
+  @media(max-width:700px){ .cp-body { grid-template-columns: 1fr; } }
+
+  /* LEFT COLUMN — photo + ID */
+  .cp-photo-col {
+    border-right: 1px solid var(--glass-border);
+    padding: 2rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+    background: rgba(245,166,35,0.02);
+  }
+
+  .cp-photo-frame {
+    width: 140px;
+    height: 170px;
+    border: 2px solid var(--amber-dim);
+    position: relative;
+    background: rgba(245,166,35,0.04);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 0.5rem;
+    overflow: hidden;
+  }
+
+  .cp-photo-frame::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(245,166,35,0.03) 3px,
+      rgba(245,166,35,0.03) 4px
+    );
+  }
+
+  .cp-photo-icon {
+    font-size: 3.5rem;
+    filter: grayscale(1) opacity(0.7);
+    position: relative;
+    z-index: 1;
+  }
+
+  .cp-photo-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.55rem;
+    color: var(--amber-dim);
+    letter-spacing: 0.2em;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* corner ticks on photo */
+  .cp-photo-frame .tick {
+    position: absolute;
+    width: 12px; height: 12px;
+    border-color: var(--amber);
+    border-style: solid;
+  }
+  .cp-photo-frame .tick.tl { top:4px; left:4px; border-width:2px 0 0 2px; }
+  .cp-photo-frame .tick.tr { top:4px; right:4px; border-width:2px 2px 0 0; }
+  .cp-photo-frame .tick.bl { bottom:4px; left:4px; border-width:0 0 2px 2px; }
+  .cp-photo-frame .tick.br { bottom:4px; right:4px; border-width:0 2px 2px 0; }
+
+  .cp-id-block {
+    width: 100%;
+    text-align: center;
+  }
+
+  .cp-id-number {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--amber);
+    letter-spacing: 0.2em;
+    background: rgba(245,166,35,0.08);
+    border: 1px solid rgba(245,166,35,0.2);
+    padding: 0.4rem 0.6rem;
+    margin-bottom: 0.75rem;
+    display: block;
+  }
+
+  .cp-barcode {
+    width: 100%;
+    height: 36px;
+    display: flex;
+    align-items: stretch;
+    gap: 2px;
+    margin-top: 0.5rem;
+  }
+
+  .cp-barcode-bar {
+    flex: 1;
+    background: var(--amber-dim);
+    opacity: 0.6;
+  }
+
+  .cp-barcode-bar:nth-child(2n)   { flex: 1.5; opacity: 0.4; }
+  .cp-barcode-bar:nth-child(3n)   { flex: 0.5; opacity: 0.8; }
+  .cp-barcode-bar:nth-child(5n)   { flex: 2;   opacity: 0.3; }
+  .cp-barcode-bar:nth-child(7n)   { flex: 0.7; opacity: 0.9; }
+
+  .cp-dna-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.5rem;
+    color: var(--text-muted);
+    letter-spacing: 0.15em;
+    margin-top: 0.3rem;
+    text-align: center;
+  }
+
+  .cp-threat {
+    width: 100%;
+    padding: 0.5rem;
+    text-align: center;
+    border: 1px solid var(--amber);
+    background: rgba(245,166,35,0.06);
+  }
+
+  .cp-threat-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.5rem;
+    color: var(--amber-dim);
+    letter-spacing: 0.2em;
+    margin-bottom: 0.25rem;
+  }
+
+  .cp-threat-value {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--amber);
+    letter-spacing: 0.1em;
+    text-shadow: 0 0 15px rgba(245,166,35,0.5);
+  }
+
+  /* RIGHT COLUMN — data fields */
+  .cp-data-col {
+    padding: 2rem;
+  }
+
+  .cp-section-title {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--amber-dim);
+    letter-spacing: 0.3em;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--glass-border);
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .cp-section-title::before {
+    content: '▸';
+    color: var(--amber);
+  }
+
+  .cp-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    margin-bottom: 1.5rem;
+  }
+
+  @media(max-width:500px){ .cp-fields { grid-template-columns: 1fr; } }
+
+  .cp-field {
+    padding: 0.75rem 1rem 0.75rem 0;
+    border-bottom: 1px solid rgba(245,166,35,0.07);
+  }
+
+  .cp-field:nth-child(2n) {
+    padding-left: 1rem;
+    padding-right: 0;
+    border-left: 1px solid rgba(245,166,35,0.07);
+  }
+
+  .cp-field-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.55rem;
+    color: var(--amber-dim);
+    letter-spacing: 0.2em;
+    margin-bottom: 0.3rem;
+  }
+
+  .cp-field-value {
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    line-height: 1.4;
+  }
+
+  .cp-field-value.highlight { color: var(--amber); font-weight: 700; }
+  .cp-field-value.green-val { color: var(--green); }
+  .cp-field-value.red-val   { color: var(--red); }
+
+  .cp-bio {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.8;
+    border-left: 2px solid var(--amber-dim);
+    padding-left: 1rem;
+    margin-bottom: 1.5rem;
+    font-style: italic;
+  }
+
+  .cp-tags-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .cp-tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem;
+    padding: 0.3rem 0.75rem;
+    letter-spacing: 0.1em;
+    border: 1px solid;
+  }
+
+  .cp-tag.interest {
+    color: var(--green);
+    border-color: var(--green-dim);
+    background: rgba(0,255,65,0.05);
+  }
+
+  .cp-tag.lang {
+    color: var(--amber);
+    border-color: var(--amber-dim);
+    background: rgba(245,166,35,0.05);
+  }
+
+  .cp-tag.goal {
+    color: #4A90D9;
+    border-color: #2A5090;
+    background: rgba(74,144,217,0.05);
+  }
+
+  /* fingerprint decoration */
+  .cp-fp {
+    position: absolute;
+    bottom: 1rem; right: 1.5rem;
+    opacity: 0.04;
+    font-size: 7rem;
+    line-height: 1;
+    pointer-events: none;
+    z-index: 1;
+    filter: blur(1px);
+  }
+
+  @media(max-width:768px){
+    nav { display: none; }
+    .search-wrap input { width: 150px; }
+    h1 { font-size: 2rem; }
+    .incident-body { grid-template-columns: 1fr; }
+    section { padding: 3rem 1rem; }
+    #report { padding: 2rem 1rem; }
+    #criminal-profile { padding: 3rem 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ─── INTRO CUTSCENE ─── -->
+<div id="intro">
+  <div class="terminal-window">
+    <div class="terminal-bar">
+      <div class="t-dot r"></div>
+      <div class="t-dot y"></div>
+      <div class="t-dot g"></div>
+    </div>
+    <div id="terminal-text">
+      <span class="cursor-blink"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ─── MAIN INTERFACE ─── -->
+<div id="main">
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-badge">
+      <div class="badge-icon">🕵️</div>
+      <div>
+        <div class="badge-text">CASE ACTIVE</div>
+        <div class="badge-name glitch" data-text="PRANSHU AYUSH">PRANSHU AYUSH</div>
+      </div>
+    </div>
+    <nav>
+      <a href="#board">BOARD</a>
+      <a href="#criminal-profile">PROFILE</a>
+      <a href="#case-files">CASES</a>
+      <a href="#skills">EVIDENCE</a>
+      <a href="#incidents">INCIDENTS</a>
+      <a href="#witnesses">WITNESSES</a>
+      <a href="#timeline">TIMELINE</a>
+      <a href="#report">REPORT</a>
+    </nav>
+    <div class="search-wrap">
+      <span class="search-icon">⌕</span>
+      <input type="text" id="search-input" placeholder="QUERY DATABASE...">
+      <div id="search-results">
+        <div class="sr-header">EVIDENCE RETRIEVED</div>
+      </div>
+    </div>
+    <div class="status-tag open">● CASE OPEN</div>
+  </header>
+
+  <!-- INVESTIGATION BOARD -->
+  <section id="board" style="padding-top: 7rem; max-width:100%; padding-bottom: 2rem;">
+    <div class="board-header">
+      <div class="classified-stamp">⬛ CLASSIFIED ⬛</div>
+      <div class="case-number">CASE № FD-2024-0042 / FILED: 18 MAY 2007</div>
+      <h1 class="glitch" data-text="PRANSHU AYUSH"><span class="highlight">PRANSHU</span> AYUSH</h1>
+      <div class="board-sub">SUBJECT: PRANSHU AYUSH — FULL SPECTRUM EVIDENCE ANALYSIS IN PROGRESS</div>
+    </div>
+
+    <!-- EVIDENCE BOARD -->
+    <div id="evidence-board">
+      <svg id="evidence-svg" viewBox="0 0 900 506" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="glow-amber">
+            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+            <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="glow-green">
+            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+            <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="glow-red">
+            <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+            <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <!-- Dark grid background -->
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(245,166,35,0.04)" stroke-width="1"/>
+          </pattern>
+        </defs>
+
+        <!-- Grid background -->
+        <rect width="900" height="506" fill="url(#grid)"/>
+
+        <!-- Corner markers -->
+        <g stroke="rgba(245,166,35,0.3)" stroke-width="1" fill="none">
+          <path d="M 20 50 L 20 20 L 50 20"/>
+          <path d="M 880 50 L 880 20 L 850 20"/>
+          <path d="M 20 456 L 20 486 L 50 486"/>
+          <path d="M 880 456 L 880 486 L 850 486"/>
+        </g>
+
+        <!-- THREADS (connections) -->
+        <!-- Center to Criminal Profile -->
+        <line x1="450" y1="253" x2="450" y2="80" class="thread" stroke="#FF2233" stroke-width="1.5" opacity="0.35" style="animation-delay:-3s"/>
+        <!-- Center to Profile -->
+        <line x1="450" y1="253" x2="225" y2="180" class="thread" stroke="#F5A623" stroke-width="1.5" opacity="0.4"/>
+        <!-- Center to Skills -->
+        <line x1="450" y1="253" x2="675" y2="150" class="thread" stroke="#00FF41" stroke-width="1.5" opacity="0.4" style="animation-delay:-1s"/>
+        <!-- Center to Cases -->
+        <line x1="450" y1="253" x2="700" y2="340" class="thread" stroke="#F5A623" stroke-width="1.5" opacity="0.4" style="animation-delay:-2s"/>
+        <!-- Center to Incidents -->
+        <line x1="450" y1="253" x2="220" y2="370" class="thread" stroke="#FF2233" stroke-width="1.5" opacity="0.3" style="animation-delay:-0.5s"/>
+        <!-- Center to Timeline -->
+        <line x1="450" y1="253" x2="450" y2="420" class="thread" stroke="#F5A623" stroke-width="1.5" opacity="0.35" style="animation-delay:-1.5s"/>
+        <!-- Secondary connections -->
+        <line x1="225" y1="180" x2="675" y2="150" stroke="rgba(245,166,35,0.12)" stroke-width="1" stroke-dasharray="4 6"/>
+        <line x1="675" y1="150" x2="700" y2="340" stroke="rgba(0,255,65,0.12)" stroke-width="1" stroke-dasharray="4 6"/>
+        <line x1="220" y1="370" x2="450" y2="420" stroke="rgba(255,34,51,0.12)" stroke-width="1" stroke-dasharray="4 6"/>
+
+        <!-- ── NODE: CRIMINAL PROFILE ── -->
+        <g id="node-criminal" class="node-circle" onclick="scrollToSection('criminal-profile')" style="cursor:crosshair">
+          <circle cx="450" cy="80" r="44" fill="rgba(255,34,51,0.07)" stroke="#FF2233" stroke-width="1.5" filter="url(#glow-red)" opacity="0.9"/>
+          <circle cx="450" cy="80" r="36" fill="transparent" stroke="rgba(255,34,51,0.3)" stroke-width="1" stroke-dasharray="3 3"/>
+          <text x="450" y="74" class="node-label" fill="#FF2233">CRIMINAL</text>
+          <text x="450" y="87" class="node-sub">PROFILE</text>
+        </g>
+
+        <!-- ── CENTRAL NODE: SUBJECT ── -->
+        <g id="node-center" class="node-circle" onclick="openModal('profile')" style="cursor:crosshair">
+          <circle cx="450" cy="253" r="52" class="node-pulse" fill="rgba(245,166,35,0.12)"/>
+          <circle cx="450" cy="253" r="42" fill="rgba(245,166,35,0.08)" stroke="#F5A623" stroke-width="2" filter="url(#glow-amber)"/>
+          <circle cx="450" cy="253" r="34" fill="rgba(245,166,35,0.05)" stroke="#F5A623" stroke-width="1" opacity="0.5"/>
+          <text x="450" y="248" class="node-label" fill="#F5A623">SUBJECT</text>
+          <text x="450" y="261" class="node-sub">PROFILE</text>
+          <circle cx="450" cy="253" r="42" fill="transparent" stroke="rgba(245,166,35,0.3)" stroke-width="1"/>
+        </g>
+
+        <!-- ── NODE: SKILLS ── -->
+        <g id="node-skills" class="node-circle" onclick="scrollToSection('skills')" style="cursor:crosshair">
+          <circle cx="675" cy="150" r="44" fill="rgba(0,255,65,0.06)" stroke="#00FF41" stroke-width="1.5" filter="url(#glow-green)" opacity="0.9"/>
+          <text x="675" y="145" class="node-label" fill="#00FF41">SKILLS</text>
+          <text x="675" y="158" class="node-sub">EVIDENCE DB</text>
+        </g>
+
+        <!-- ── NODE: CASE FILES ── -->
+        <g id="node-cases" class="node-circle" onclick="scrollToSection('case-files')" style="cursor:crosshair">
+          <circle cx="700" cy="340" r="44" fill="rgba(245,166,35,0.06)" stroke="#F5A623" stroke-width="1.5" filter="url(#glow-amber)" opacity="0.9"/>
+          <text x="700" y="335" class="node-label" fill="#F5A623">PROJECTS</text>
+          <text x="700" y="348" class="node-sub">CASE FILES</text>
+        </g>
+
+        <!-- ── NODE: INCIDENTS ── -->
+        <g id="node-incidents" class="node-circle" onclick="scrollToSection('incidents')" style="cursor:crosshair">
+          <circle cx="220" cy="370" r="44" fill="rgba(255,34,51,0.06)" stroke="#FF2233" stroke-width="1.5" filter="url(#glow-red)" opacity="0.9"/>
+          <text x="220" y="365" class="node-label" fill="#FF2233">INCIDENTS</text>
+          <text x="220" y="378" class="node-sub">REPORTS</text>
+        </g>
+
+        <!-- ── NODE: PROFILE ── -->
+        <g id="node-profile" class="node-circle" onclick="openModal('profile')" style="cursor:crosshair">
+          <circle cx="225" cy="180" r="44" fill="rgba(74,144,217,0.06)" stroke="#4A90D9" stroke-width="1.5" filter="url(#glow-amber)" opacity="0.9"/>
+          <text x="225" y="175" class="node-label" fill="#4A90D9">PROFILE</text>
+          <text x="225" y="188" class="node-sub">ID CONFIRMED</text>
+        </g>
+
+        <!-- ── NODE: TIMELINE ── -->
+        <g id="node-timeline" class="node-circle" onclick="scrollToSection('timeline')" style="cursor:crosshair">
+          <circle cx="450" cy="420" r="40" fill="rgba(245,166,35,0.05)" stroke="rgba(245,166,35,0.6)" stroke-width="1.5" opacity="0.9"/>
+          <text x="450" y="415" class="node-label" fill="rgba(245,166,35,0.8)">TIMELINE</text>
+          <text x="450" y="428" class="node-sub">OF EVENTS</text>
+        </g>
+
+        <!-- Hover labels -->
+        <text x="450" y="496" text-anchor="middle" font-family="Share Tech Mono, monospace" font-size="9" fill="rgba(245,166,35,0.4)" letter-spacing="2">[ CLICK NODES TO INVESTIGATE ]</text>
+
+        <!-- Coordinate label -->
+        <text x="22" y="16" font-family="Share Tech Mono, monospace" font-size="8" fill="rgba(245,166,35,0.3)" letter-spacing="1">LAT 36.7°N / LON 119.4°W</text>
+        <text x="878" y="16" font-family="Share Tech Mono, monospace" font-size="8" fill="rgba(245,166,35,0.3)" letter-spacing="1" text-anchor="end">MONITORING ACTIVE</text>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ─── CRIMINAL PROFILE ─── -->
+  <section id="criminal-profile" style="padding: 5rem 2rem; max-width: 1100px; margin: 0 auto;">
+    <div class="section-header">
+      <div class="section-label" style="color: var(--red); border-color: var(--red);">SUBJECT</div>
+      <h2><span style="color:var(--red);">CRIMINAL</span> PROFILE</h2>
+      <div class="section-rule" style="background: linear-gradient(to right, var(--red), transparent);"></div>
+    </div>
+
+    <div class="cp-outer">
+      <!-- TOP TAPE -->
+      <div class="cp-tape">
+        <span>⚠ CLASSIFIED DOSSIER — AUTHORIZED PERSONNEL ONLY ⚠</span>
+        <span class="cp-tape-blink">● LIVE FILE</span>
+      </div>
+
+      <!-- Ghost fingerprint -->
+      <div class="cp-fp">👆</div>
+
+      <!-- MAIN BODY -->
+      <div class="cp-body">
+
+        <!-- LEFT: PHOTO + ID -->
+        <div class="cp-photo-col">
+          <div class="cp-photo-frame">
+            <div class="tick tl"></div><div class="tick tr"></div>
+            <div class="tick bl"></div><div class="tick br"></div>
+            <div class="cp-photo-icon">🧑‍💻</div>
+            <div class="cp-photo-label">SUBJECT PHOTO<br>FILE REF: IMG-0042</div>
+          </div>
+
+          <div class="cp-id-block">
+            <span class="cp-id-number">ID: FD-2024-0042</span>
+            <div class="cp-barcode">
+              <div class="cp-barcode-bar"></div><div class="cp-barcode-bar"></div>
+              <div class="cp-barcode-bar"></div><div class="cp-barcode-bar"></div>
+              <div class="cp-barcode-bar"></div><div class="cp-barcode-bar"></div>
+              <div class="cp-barcode-bar"></div><div class="cp-barcode-bar"></div>
+              <div class="cp-barcode-bar"></div><div class="cp-barcode-bar"></div>
+              <div class="cp-barcode-bar"></div><div class="cp-barcode-bar"></div>
+              <div class="cp-barcode-bar"></div><div class="cp-barcode-bar"></div>
+              <div class="cp-barcode-bar"></div><div class="cp-barcode-bar"></div>
+              <div class="cp-barcode-bar"></div><div class="cp-barcode-bar"></div>
+              <div class="cp-barcode-bar"></div><div class="cp-barcode-bar"></div>
+            </div>
+            <div class="cp-dna-label">BIO · SIG · VERIFIED</div>
+          </div>
+
+          <div class="cp-threat">
+            <div class="cp-threat-label">THREAT ASSESSMENT</div>
+            <div class="cp-threat-value">EXTREME</div>
+          </div>
+        </div>
+
+        <!-- RIGHT: DATA FIELDS -->
+        <div class="cp-data-col">
+
+          <!-- PERSONAL IDENTIFICATION -->
+          <div class="cp-section-title">PERSONAL IDENTIFICATION</div>
+          <div class="cp-fields">
+            <div class="cp-field">
+              <div class="cp-field-label">FULL NAME</div>
+              <div class="cp-field-value highlight">Pranshu Ayush</div>
+            </div>
+            <div class="cp-field">
+              <div class="cp-field-label">AGE</div>
+              <div class="cp-field-value">19 years</div>
+            </div>
+            <div class="cp-field">
+              <div class="cp-field-label">DATE OF BIRTH</div>
+              <div class="cp-field-value">18 May 2007</div>
+            </div>
+            <div class="cp-field">
+              <div class="cp-field-label">NATIONALITY</div>
+              <div class="cp-field-value">Fijian</div>
+            </div>
+            <div class="cp-field">
+              <div class="cp-field-label">LOCATION</div>
+              <div class="cp-field-value">Ba, Fiji</div>
+            </div>
+            <div class="cp-field">
+              <div class="cp-field-label">STATUS</div>
+              <div class="cp-field-value green-val">● ACTIVE — AT LARGE</div>
+            </div>
+          </div>
+
+          <!-- PROFESSIONAL IDENTITY -->
+          <div class="cp-section-title">PROFESSIONAL IDENTITY</div>
+          <div class="cp-fields">
+            <div class="cp-field">
+              <div class="cp-field-label">OCCUPATION</div>
+              <div class="cp-field-value">Full Time Student in Accounting and Information Technology</div>
+            </div>
+            <div class="cp-field">
+              <div class="cp-field-label">CURRENT TERTIARY INSTITUTION</div>
+              <div class="cp-field-value">The University of Fiji</div>
+            </div>
+            <div class="cp-field">
+              <div class="cp-field-label">EDUCATION</div>
+              <div class="cp-field-value">B.Com. ACC/IT, 2028</div>
+            </div>
+            <div class="cp-field">
+              <div class="cp-field-label">YEARS IN FIELD</div>
+              <div class="cp-field-value">1 Year</div>
+            </div>
+            <div class="cp-field">
+              <div class="cp-field-label">EMAIL</div>
+              <div class="cp-field-value">thepranshuayush@gmail.com</div>
+            </div>
+            <div class="cp-field">
+              <div class="cp-field-label">GITHUB ALIAS</div>
+              <div class="cp-field-value">github.com/notpranshu</div>
+            </div>
+          </div>
+
+          <!-- PSYCHOLOGICAL PROFILE -->
+          <div class="cp-section-title">PSYCHOLOGICAL PROFILE</div>
+          <div class="cp-bio">
+            Subject exhibits compulsive problem-solving tendencies. Known to enter hyperfocus states lasting 6–10 hours when presented with novel technical challenges. Displays unusual empathy for fellow engineers. Considered highly dangerous when given access to a code editor and a will to solve problems
+          </div>
+
+          <!-- KNOWN INTERESTS -->
+          <div class="cp-section-title">KNOWN INTERESTS &amp; LANGUAGES</div>
+          <div class="cp-tags-row">
+            <span class="cp-tag interest">Open Source</span>
+            <span class="cp-tag interest">Data Visualization</span>
+            <span class="cp-tag interest">AI / ML Research</span>
+            <span class="cp-tag interest">System Design</span>
+            <span class="cp-tag interest">Photography</span>
+            <span class="cp-tag lang">JavaScript</span>
+            <span class="cp-tag lang">Python</span>
+            <span class="cp-tag lang">TypeScript</span>
+            <span class="cp-tag lang">SQL</span>
+            <span class="cp-tag goal">Open to Opportunities</span>
+          </div>
+
+        </div><!-- /cp-data-col -->
+      </div><!-- /cp-body -->
+    </div><!-- /cp-outer -->
+  </section>
+
+  <!-- ─── CASE FILES ─── -->
+  <section id="case-files">
+    <div class="section-header">
+      <div class="section-label">CASE FILES</div>
+      <h2><span>PROJ</span>ECT DOSSIERS</h2>
+      <div class="section-rule"></div>
+    </div>
+
+    <div class="cases-grid">
+      <!-- Case 1 -->
+      <div class="case-card" onclick="openModal('case1')">
+        <div class="case-corner"></div>
+        <div class="case-id">
+          <span>CASE № FD-001-A</span>
+          <span class="case-status solved">● SOLVED</span>
+        </div>
+        <div class="case-title">OPERATION HOMELAB.CTRL</div>
+        <div class="case-desc">Self Hosted web portal centralisiing homelab management through resource monitoring, and a ssh terminal into a single dashboard.</div>
+        <div class="evidence-tags">
+          <span class="etag">SSH</span>
+          <span class="etag">Node.js</span>
+          <span class="etag">Docker</span>
+          <span class="etag">WebSocket</span>
+          <span class="etag">React</span>
+        </div>
+        <div class="case-footer">
+          <span>FILED: MAR 2024</span>
+          <span>VIEW EVIDENCE →</span>
+        </div>
+      </div>
+
+      <!-- Case 2 -->
+      <div class="case-card" onclick="openModal('case2')">
+        <div class="case-corner"></div>
+        <div class="case-id">
+          <span>CASE № FD-002-B</span>
+          <span class="case-status open">● ACTIVE</span>
+        </div>
+        <div class="case-title">PROJECT SENTIENCE</div>
+        <div class="case-desc">AI-powered document intelligence system. Natural language querying over unstructured enterprise data at scale.</div>
+        <div class="evidence-tags">
+          <span class="etag">Python</span>
+          <span class="etag">LangChain</span>
+          <span class="etag">FastAPI</span>
+          <span class="etag">Pinecone</span>
+          <span class="etag">GPT-4</span>
+        </div>
+        <div class="case-footer">
+          <span>FILED: AUG 2024</span>
+          <span>VIEW EVIDENCE →</span>
+        </div>
+      </div>
+
+      <!-- Case 3 -->
+      <div class="case-card" onclick="openModal('case3')">
+        <div class="case-corner"></div>
+        <div class="case-id">
+          <span>CASE № FD-003-C</span>
+          <span class="case-status solved">● SOLVED</span>
+        </div>
+        <div class="case-title">THE LOGISTICS ENIGMA</div>
+        <div class="case-desc">Supply chain optimization engine reducing delivery anomalies by 34%. Machine learning meets operations research.</div>
+        <div class="evidence-tags">
+          <span class="etag">Python</span>
+          <span class="etag">scikit-learn</span>
+          <span class="etag">Pandas</span>
+          <span class="etag">Flask</span>
+          <span class="etag">Docker</span>
+        </div>
+        <div class="case-footer">
+          <span>FILED: NOV 2023</span>
+          <span>VIEW EVIDENCE →</span>
+        </div>
+      </div>
+
+      <!-- Case 4 -->
+      <div class="case-card" onclick="openModal('case4')">
+        <div class="case-corner"></div>
+        <div class="case-id">
+          <span>CASE № FD-004-D</span>
+          <span class="case-status cold">● ARCHIVED</span>
+        </div>
+        <div class="case-title">GHOST PROTOCOL UI</div>
+        <div class="case-desc">Accessibility-first design system serving 12 internal products. Component library covering 200+ documented patterns.</div>
+        <div class="evidence-tags">
+          <span class="etag">TypeScript</span>
+          <span class="etag">Storybook</span>
+          <span class="etag">Tailwind</span>
+          <span class="etag">Figma</span>
+        </div>
+        <div class="case-footer">
+          <span>FILED: JUN 2023</span>
+          <span>VIEW EVIDENCE →</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── SKILLS EVIDENCE ─── -->
+  <section id="skills">
+    <div class="section-header">
+      <div class="section-label">SKILLS</div>
+      <h2>EVIDENCE <span>NETWORK</span></h2>
+      <div class="section-rule"></div>
+    </div>
+    <div class="skills-grid" id="skills-grid">
+      <!-- JS -->
+      <div class="skill-node">
+        <div class="skill-category">FRONTEND / LANGUAGE</div>
+        <div class="skill-name">JavaScript / TS</div>
+        <div class="skill-bar-wrap"><div class="skill-bar-fill" data-width="92" style="width:0%"></div></div>
+        <div class="skill-evidence">Verified in <span>4 cases</span> · 6 yrs</div>
+      </div>
+      <!-- React -->
+      <div class="skill-node">
+        <div class="skill-category">FRONTEND / FRAMEWORK</div>
+        <div class="skill-name">React / Next.js</div>
+        <div class="skill-bar-wrap"><div class="skill-bar-fill" data-width="88" style="width:0%"></div></div>
+        <div class="skill-evidence">Verified in <span>3 cases</span> · 4 yrs</div>
+      </div>
+      <!-- Python -->
+      <div class="skill-node">
+        <div class="skill-category">BACKEND / LANGUAGE</div>
+        <div class="skill-name">Python</div>
+        <div class="skill-bar-wrap"><div class="skill-bar-fill" data-width="85" style="width:0%"></div></div>
+        <div class="skill-evidence">Verified in <span>3 cases</span> · 5 yrs</div>
+      </div>
+      <!-- SQL -->
+      <div class="skill-node">
+        <div class="skill-category">DATA / DATABASE</div>
+        <div class="skill-name">SQL / PostgreSQL</div>
+        <div class="skill-bar-wrap"><div class="skill-bar-fill" data-width="80" style="width:0%"></div></div>
+        <div class="skill-evidence">Verified in <span>2 cases</span> · 5 yrs</div>
+      </div>
+      <!-- ML -->
+      <div class="skill-node">
+        <div class="skill-category">DATA / ML</div>
+        <div class="skill-name">Machine Learning</div>
+        <div class="skill-bar-wrap"><div class="skill-bar-fill" data-width="72" style="width:0%"></div></div>
+        <div class="skill-evidence">Verified in <span>2 cases</span> · 3 yrs</div>
+      </div>
+      <!-- Docker -->
+      <div class="skill-node">
+        <div class="skill-category">DEVOPS / INFRA</div>
+        <div class="skill-name">Docker / K8s</div>
+        <div class="skill-bar-wrap"><div class="skill-bar-fill" data-width="68" style="width:0%"></div></div>
+        <div class="skill-evidence">Verified in <span>2 cases</span> · 3 yrs</div>
+      </div>
+      <!-- Node -->
+      <div class="skill-node">
+        <div class="skill-category">BACKEND / RUNTIME</div>
+        <div class="skill-name">Node.js / Express</div>
+        <div class="skill-bar-wrap"><div class="skill-bar-fill" data-width="83" style="width:0%"></div></div>
+        <div class="skill-evidence">Verified in <span>3 cases</span> · 4 yrs</div>
+      </div>
+      <!-- AI -->
+      <div class="skill-node">
+        <div class="skill-category">HOSTING / SERVERS</div>
+        <div class="skill-name">Linux</div>
+        <div class="skill-bar-wrap"><div class="skill-bar-fill" data-width="75" style="width:0%"></div></div>
+        <div class="skill-evidence">Verified in <span>1 case</span> · 2 yrs</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── INCIDENT REPORTS ─── -->
+  <section id="incidents">
+    <div class="section-header">
+      <div class="section-label">INCIDENTS</div>
+      <h2><span>INCIDENT</span> REPORTS</h2>
+      <div class="section-rule"></div>
+    </div>
+
+    <div class="incidents-list">
+      <!-- Incident 1 -->
+      <div class="incident">
+        <div class="incident-header">
+          <div>
+            <div class="incident-id">INCIDENT LOG #IR-2024-003</div>
+            <div class="incident-title">lorem ipsum dolor sit amet</div>
+          </div>
+          <div class="incident-severity">HIGH SEVERITY</div>
+        </div>
+        <div class="incident-body">
+          <div class="incident-field">
+            <div class="incident-field-label">ROOT CAUSE</div>
+            <p>Uncached N+1 query pattern in ORM layer, undetected until traffic spike hit 3x normal load during campaign launch.</p>
+          </div>
+          <div class="incident-field">
+            <div class="incident-field-label">RESOLUTION</div>
+            <p>Implemented aggressive query batching via DataLoader, added Redis caching layer, established load testing in CI pipeline.</p>
+          </div>
+          <div class="incident-field">
+            <div class="incident-field-label">LESSON LEARNED</div>
+            <p>Performance testing must mirror real traffic patterns. Synthetic benchmarks are not sufficient. Monitor at the database level first.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Incident 2 -->
+      <div class="incident">
+        <div class="incident-header">
+          <div>
+            <div class="incident-id">INCIDENT LOG #IR-2023-011</div>
+            <div class="incident-title">lorem ipsum dolor sit amet</div>
+          </div>
+          <div class="incident-severity">MEDIUM SEVERITY</div>
+        </div>
+        <div class="incident-body">
+          <div class="incident-field">
+            <div class="incident-field-label">ROOT CAUSE</div>
+            <p>Ambiguous requirements accepted without clarification. Feature ballooned from 3 days to 3 weeks mid-sprint without stakeholder alignment.</p>
+          </div>
+          <div class="incident-field">
+            <div class="incident-field-label">RESOLUTION</div>
+            <p>Negotiated reduced scope for initial release. Shipped MVP on schedule; deferred expanded feature to next sprint with documented spec.</p>
+          </div>
+          <div class="incident-field">
+            <div class="incident-field-label">LESSON LEARNED</div>
+            <p>Acceptance criteria must be written before sprint commit. Verbal scope is no scope at all. Written definitions of done are non-negotiable.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Incident 3 -->
+      <div class="incident">
+        <div class="incident-header">
+          <div>
+            <div class="incident-id">INCIDENT LOG #IR-2023-007</div>
+            <div class="incident-title">lorem ipsum dolor sit amet</div>
+          </div>
+          <div class="incident-severity">LOW SEVERITY</div>
+        </div>
+        <div class="incident-body">
+          <div class="incident-field">
+            <div class="incident-field-label">ROOT CAUSE</div>
+            <p>Premature architectural complexity. Built distributed microservices for a system with 200 users, creating operational overhead that exceeded value.</p>
+          </div>
+          <div class="incident-field">
+            <div class="incident-field-label">RESOLUTION</div>
+            <p>Consolidated back to a well-structured monolith. Delivery velocity increased 4x. Reserved microservice extraction for actual scaling inflection points.</p>
+          </div>
+          <div class="incident-field">
+            <div class="incident-field-label">LESSON LEARNED</div>
+            <p>Architecture must serve the current problem, not the imagined future one. Start simple. Complexity is a liability until proven otherwise.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── WITNESSES ─── -->
+  <section id="witnesses">
+    <div class="section-header">
+      <div class="section-label">WITNESSES</div>
+      <h2>WITNESS <span>STATEMENTS</span></h2>
+      <div class="section-rule"></div>
+    </div>
+
+    <div class="witnesses-grid">
+      <div class="witness">
+        <div class="witness-header">
+          <div class="witness-avatar">JR</div>
+          <div class="witness-meta">
+            <div class="witness-name">JAMES REEVES</div>
+            <div class="witness-role">CTO — NEXUS LABS INC.</div>
+          </div>
+          <div class="interview-tag">● VERIFIED</div>
+        </div>
+        <div class="witness-q">Q: Describe the subject's impact on your engineering team.</div>
+        <div class="witness-a">Alex rebuilt our entire data pipeline in 6 weeks. What shocked me wasn't the speed — it was that the team actually understood it afterward. Clear documentation, clean architecture, zero cowboy code.</div>
+      </div>
+
+      <div class="witness">
+        <div class="witness-header">
+          <div class="witness-avatar">SC</div>
+          <div class="witness-meta">
+            <div class="witness-name">SARAH CHEN</div>
+            <div class="witness-role">PRODUCT LEAD — ORBITAL SYSTEMS</div>
+          </div>
+          <div class="interview-tag">● VERIFIED</div>
+        </div>
+        <div class="witness-q">Q: How did the subject handle pressure situations?</div>
+        <div class="witness-a">I've watched Alex debug production incidents at 2am while simultaneously writing a post-mortem and calming down three panicking stakeholders. Composure is a feature, not a trait — and they deploy it reliably.</div>
+      </div>
+
+      <div class="witness">
+        <div class="witness-header">
+          <div class="witness-avatar">MP</div>
+          <div class="witness-meta">
+            <div class="witness-name">MARCUS PATEL</div>
+            <div class="witness-role">SENIOR ENGINEER — COWORKER</div>
+          </div>
+          <div class="interview-tag">● VERIFIED</div>
+        </div>
+        <div class="witness-q">Q: What makes the subject unusual as a collaborator?</div>
+        <div class="witness-a">Most engineers protect their code. Alex reviews yours like they wrote it and genuinely wants it to be better than theirs. That's rare enough to be suspicious. It's actually just who they are.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── TIMELINE ─── -->
+  <section id="timeline">
+    <div class="section-header">
+      <div class="section-label">TIMELINE</div>
+      <h2>TIMELINE <span>OF EVENTS</span></h2>
+      <div class="section-rule"></div>
+    </div>
+
+    <div class="timeline">
+      <div class="tl-event">
+        <div class="tl-dot active"></div>
+        <div class="tl-date">PRESENT — 2024</div>
+        <div class="tl-title">Senior Full-Stack Engineer · Nexus Labs</div>
+        <div class="tl-desc">Leading AI-powered product features; managing two junior engineers; architecting the company's first LLM integration layer.</div>
+      </div>
+      <div class="tl-event">
+        <div class="tl-dot"></div>
+        <div class="tl-date">2022 — 2024</div>
+        <div class="tl-title">Full-Stack Engineer · Orbital Systems</div>
+        <div class="tl-desc">Built the flagship analytics dashboard from 0→1; reduced page load time 68%; led migration from REST to GraphQL.</div>
+      </div>
+      <div class="tl-event">
+        <div class="tl-dot"></div>
+        <div class="tl-date">2020 — 2022</div>
+        <div class="tl-title">Software Developer · Meridian Group</div>
+        <div class="tl-desc">Internal tooling and automation. Saved the ops team 40 hours per week through workflow automation. First production Python ML model deployed.</div>
+      </div>
+      <div class="tl-event">
+        <div class="tl-dot"></div>
+        <div class="tl-date">2018 — 2020</div>
+        <div class="tl-title">Computer Science Degree · University of Technology</div>
+        <div class="tl-desc">Graduated with honors. Thesis: adversarial robustness in neural network classifiers. Founded the university's first competitive programming club.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── FINAL REPORT ─── -->
+  <section id="report">
+    <div id="report" style="background: rgba(10,10,10,0.9); border: 1px solid var(--amber); padding: 3rem; position: relative; max-width: 860px; margin: 0 auto;">
+      <div class="report-stamp">CLEARED</div>
+      <div class="report-title">FORENSICS DIVISION — FINAL ASSESSMENT REPORT / CASE № FD-2024-0042</div>
+      <h3>SUBJECT ASSESSMENT COMPLETE</h3>
+
+      <div class="report-grid">
+        <div class="report-field">
+          <div class="rf-label">SUBJECT IDENTITY</div>
+          <div class="rf-value">Pranshu Ayush</div>
+        </div>
+        <div class="report-field">
+          <div class="rf-label">YEARS OF OPERATION</div>
+          <div class="rf-value">3 Years Active</div>
+        </div>
+        <div class="report-field">
+          <div class="rf-label">CASES CLOSED</div>
+          <div class="rf-value green">3 / 4 (75%)</div>
+        </div>
+        <div class="report-field">
+          <div class="rf-label">SKILLS VERIFIED</div>
+          <div class="rf-value green">8 Confirmed and Growing</div>
+        </div>
+        <div class="report-field">
+          <div class="rf-label">INCIDENT RATE</div>
+          <div class="rf-value">3 Logged · All Resolved</div>
+        </div>
+        <div class="report-field">
+          <div class="rf-label">WITNESS CORROBORATION</div>
+          <div class="rf-value green">3/3 Positive</div>
+        </div>
+      </div>
+
+      <div class="report-assessment">
+        Subject demonstrates a consistent pattern of <strong>technical depth paired with operational clarity</strong>. Evidence across all four case files confirms an ability to deliver under ambiguous requirements. The incident log reveals not recklessness, but a documented pattern of <strong>recovery, root cause analysis, and institutional improvement</strong> — hallmarks of superior judgment. Witness statements corroborate independently. No discrepancies detected between claimed skills and verified evidence chains. <strong>Recommendation: HIGH CONFIDENCE ENGAGEMENT.</strong>
+      </div>
+
+      <div class="report-cta">
+        <a href="mailto:thepranshuayush@gmail.com" class="btn btn-primary">INITIATE CONTACT</a>
+        <a href="#" class="btn btn-ghost" onclick="openModal('profile'); return false;">VIEW FULL PROFILE</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p>FORENSICS DIVISION · CASE № FD-2024-0042 · <span>ALL EVIDENCE CLASSIFIED</span> · UNAUTHORIZED ACCESS IS A FEDERAL OFFENSE</p>
+    <p style="margin-top:0.5rem; opacity:0.5;">© 2024 PRANSHU AYUSH · BUILT WITH OBSESSION AND INSUFFICIENT SLEEP</p>
+  </footer>
+
+</div><!-- /main -->
+
+<!-- MODAL -->
+<div id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal()">[ CLOSE FILE ]</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<script>
+// ─── TERMINAL INTRO ───
+const lines = [
+  { text: '> FORENSICS SYSTEM v2.7.1 — INITIALIZING...', delay: 0, cls: '' },
+  { text: '> CONNECTING TO SECURE DATABASE...', delay: 600, cls: '' },
+  { text: '> LOADING ENCRYPTION MODULE......... OK', delay: 1100, cls: '' },
+  { text: '> VERIFYING INVESTIGATOR CREDENTIALS...', delay: 1600, cls: '' },
+  { text: '> BADGE NO: FD-INV-7741 — RECOGNIZED', delay: 2200, cls: 'amber' },
+  { text: '> RETRIEVING CASE FILE: FD-2024-0042...', delay: 2700, cls: '' },
+  { text: '> DECRYPTING SUBJECT PROFILE...', delay: 3200, cls: '' },
+  { text: '> WARNING: SUBJECT IS HIGHLY SKILLED', delay: 3700, cls: 'error' },
+  { text: '> BIOMETRIC SCAN COMPLETE — IDENTITY UNCONFIRMED', delay: 4200, cls: '' },
+  { text: '> EVIDENCE BOARD LOADED — 12 ITEMS', delay: 4700, cls: '' },
+  { text: ' ', delay: 5200, cls: '' },
+  { text: '██████ ACCESS GRANTED ██████', delay: 5400, cls: 'big' },
+  { text: ' ', delay: 5900, cls: '' },
+  { text: '> BEGINNING INVESTIGATION. PROCEED WITH CAUTION.', delay: 6000, cls: 'amber' },
+];
+
+const termText = document.getElementById('terminal-text');
+const intro = document.getElementById('intro');
+const main = document.getElementById('main');
+
+termText.innerHTML = '<span class="cursor-blink"></span>';
+
+lines.forEach(line => {
+  setTimeout(() => {
+    const span = document.createElement('span');
+    span.className = 'term-line visible' + (line.cls ? ' ' + line.cls : '');
+    span.textContent = line.text;
+    termText.insertBefore(span, termText.lastChild);
+  }, line.delay);
+});
+
+setTimeout(() => {
+  intro.classList.add('fade-out');
+  main.classList.add('visible');
+  setTimeout(() => {
+    intro.style.display = 'none';
+    animateSkillBars();
+  }, 1200);
+}, 7000);
+
+// ─── SKILL BARS ───
+function animateSkillBars() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const fills = entry.target.querySelectorAll('.skill-bar-fill');
+        fills.forEach(fill => {
+          fill.style.width = fill.dataset.width + '%';
+        });
+      }
+    });
+  }, { threshold: 0.2 });
+
+  const grid = document.getElementById('skills-grid');
+  if (grid) observer.observe(grid);
+}
+
+// ─── MODAL DATA ───
+const modals = {
+  profile: {
+    title: 'SUBJECT PROFILE',
+    id: 'FILE № FD-2024-0042-PROFILE / CLEARANCE: TOP SECRET',
+    content: `
+      <div class="detail-row"><span class="detail-label">FULL NAME</span><span class="detail-val">Pranshu Ayush</span></div>
+      <div class="detail-row"><span class="detail-label">STATUS</span><span class="detail-val" style="color:var(--green)">ACTIVE OPERATIVE</span></div>
+      <div class="detail-row"><span class="detail-label">SPECIALIZATION</span><span class="detail-val">FINTECH</span></div>
+      <div class="detail-row"><span class="detail-label">LOCATION</span><span class="detail-val">Ba, Fiji [CONFIRMED]</span></div>
+      <div class="detail-row"><span class="detail-label">YEARS ACTIVE</span><span class="detail-val">3 Years [2023 — PRESENT]</span></div>
+      <div class="detail-row"><span class="detail-label">KNOWN ALIASES</span><span class="detail-val">@pranshu.ayush · github.com/notpranshu</span></div>
+      <div class="detail-row"><span class="detail-label">THREAT LEVEL</span><span class="detail-val" style="color:var(--amber)">HIGH — EXTREMELY COMPETENT</span></div>
+      <p style="margin-top:1.5rem;">Subject has been under observation for 3 years. Pattern analysis confirms systematic problem-solving approach, high communication fidelity, and unusual capacity for performing under deadline pressure. No deceptive activities detected.</p>
+    `
+  },
+  case1: {
+    title: 'OPERATION HOMELAB.CTRL',
+    id: 'CASE № FD-001-A / STATUS: SOLVED / FILED: MAR 2025',
+    content: `
+      <div class="detail-row"><span class="detail-label">OBJECTIVE</span><span class="detail-val">Self Hosted Web Based Homelab Resource Monitor and Terminal</span></div>
+      <div class="detail-row"><span class="detail-label">STACK</span><span class="detail-val">React, Node.js, SSH, WebSocket, Redis, Docker</span></div>
+      <div class="detail-row"><span class="detail-label">DURATION</span><span class="detail-val">14 Weeks</span></div>
+      <div class="detail-row"><span class="detail-label">OUTCOME</span><span class="detail-val" style="color:var(--green)">Improved homelab management and accessibility.</span></div>
+      <p style="margin-top:1.5rem;"><strong style="color:var(--amber)">INVESTIGATION NOTES:</strong> The system Replaced a brittle single-server setup with a horizontally scalable homelab platform: real-time SSH session multiplexing, metrics persistence, and an aggressive caching layer that cut dashboard load times by 80%. Full architecture documented; zero tribal knowledge</p>
+      <p><strong style="color:var(--amber)">CONCLUSION:</strong> Mission accomplished. Client retained for 2 subsequent engagements.</p>
+    `
+  },
+  case2: {
+    title: 'PROJECT SENTIENCE',
+    id: 'CASE № FD-002-B / STATUS: ACTIVE / FILED: AUG 2024',
+    content: `
+      <div class="detail-row"><span class="detail-label">OBJECTIVE</span><span class="detail-val">AI document intelligence — NL queries over enterprise data</span></div>
+      <div class="detail-row"><span class="detail-label">STACK</span><span class="detail-val">Python, LangChain, FastAPI, Pinecone, GPT-4, Docker</span></div>
+      <div class="detail-row"><span class="detail-label">DURATION</span><span class="detail-val">Ongoing — 4 Months Active</span></div>
+      <div class="detail-row"><span class="detail-label">CURRENT STATUS</span><span class="detail-val" style="color:var(--amber)">Beta with 3 enterprise clients. Scale-up in progress.</span></div>
+      <p style="margin-top:1.5rem;"><strong style="color:var(--amber)">INVESTIGATION NOTES:</strong> Custom RAG pipeline with hybrid semantic + keyword retrieval. Embedding model fine-tuned on domain vocabulary. Response latency under 2s for 95th percentile queries across 1M+ document corpus.</p>
+      <p><strong style="color:var(--amber)">OPEN THREADS:</strong> Multi-modal document support (images, tables) pending. Evaluation harness in development.</p>
+    `
+  },
+  case3: {
+    title: 'THE LOGISTICS ENIGMA',
+    id: 'CASE № FD-003-C / STATUS: SOLVED / FILED: NOV 2023',
+    content: `
+      <div class="detail-row"><span class="detail-label">OBJECTIVE</span><span class="detail-val">Supply chain anomaly detection and route optimization</span></div>
+      <div class="detail-row"><span class="detail-label">STACK</span><span class="detail-val">Python, scikit-learn, Pandas, Flask, Docker, PostgreSQL</span></div>
+      <div class="detail-row"><span class="detail-label">DURATION</span><span class="detail-val">12 Weeks</span></div>
+      <div class="detail-row"><span class="detail-label">OUTCOME</span><span class="detail-val" style="color:var(--green)">34% reduction in delivery exceptions. $2.1M annual savings.</span></div>
+      <p style="margin-top:1.5rem;"><strong style="color:var(--amber)">INVESTIGATION NOTES:</strong> Ensemble model combining gradient boosting and isolation forest for anomaly detection. Feature engineering from 3 years of historical shipment data. Subject led end-to-end delivery including client integration and staff training.</p>
+    `
+  },
+  case4: {
+    title: 'GHOST PROTOCOL UI',
+    id: 'CASE № FD-004-D / STATUS: ARCHIVED / FILED: JUN 2023',
+    content: `
+      <div class="detail-row"><span class="detail-label">OBJECTIVE</span><span class="detail-val">Accessible component library for 12 internal products</span></div>
+      <div class="detail-row"><span class="detail-label">STACK</span><span class="detail-val">TypeScript, React, Storybook, Tailwind, Figma, Jest</span></div>
+      <div class="detail-row"><span class="detail-label">DURATION</span><span class="detail-val">16 Weeks</span></div>
+      <div class="detail-row"><span class="detail-label">OUTCOME</span><span class="detail-val" style="color:#4A90D9)">200+ components. WCAG AA compliant. Adopted by 12 teams.</span></div>
+      <p style="margin-top:1.5rem;"><strong style="color:var(--amber)">INVESTIGATION NOTES:</strong> Full design token system, automated accessibility audits in CI, visual regression testing via Chromatic. Reduced UI development time by 55% across product teams in the 6 months post-launch.</p>
+    `
+  }
+};
+
+function openModal(key) {
+  const data = modals[key];
+  if (!data) return;
+  document.getElementById('modal-content').innerHTML = `
+    <h4>${data.title}</h4>
+    <div class="modal-id">${data.id}</div>
+    ${data.content}
+  `;
+  document.getElementById('modal-overlay').classList.add('visible');
+}
+
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('modal-overlay')) {
+    document.getElementById('modal-overlay').classList.remove('visible');
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+});
+
+// ─── SCROLL TO SECTION ───
+function scrollToSection(id) {
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ─── SEARCH SYSTEM ───
+const searchData = [
+  { type: 'PROFILE', name: 'Pranshu Ayush — Subject Identity', link: 'criminal-profile', extra: 'AGE 19 · Ba, Fiji · Fijian' },
+  { type: 'PROFILE', name: 'Psychological Profile', link: 'criminal-profile', extra: 'Threat Level: EXTREME' },
+  { type: 'PROFILE', name: 'Contact: thepranshuayush@gmail.com', link: 'criminal-profile', extra: 'Personal identification' },
+  { type: 'SKILL', name: 'JavaScript / TypeScript', link: 'skills', extra: '3 years · 4 verified cases' },
+  { type: 'SKILL', name: 'Python', link: 'skills', extra: '1 year · 3 verified cases' },
+  { type: 'SKILL', name: 'React / Next.js', link: 'skills', extra: '1 year · 3 verified cases' },
+  { type: 'SKILL', name: 'Machine Learning', link: 'skills', extra: '1 year · 2 verified cases' },
+  { type: 'SKILL', name: 'SQL / PostgreSQL', link: 'skills', extra: '1 year · 2 verified cases' },
+  { type: 'SKILL', name: 'Node.js', link: 'skills', extra: '1 year · 3 verified cases' },
+  { type: 'SKILL', name: 'Docker / Kubernetes', link: 'skills', extra: '2 years · 2 verified cases' },
+  { type: 'SKILL', name: 'Linux', link: 'skills', extra: '1 year · 1 verified case' },
+  { type: 'CASE FILE', name: 'Case 1', link: 'case-files', extra: 'Info about case 1 · SOLVED' },
+  { type: 'CASE FILE', name: 'Case 2', link: 'case-files', extra: 'Info about case 2 · ACTIVE' },
+  { type: 'CASE FILE', name: 'Case 3', link: 'case-files', extra: 'Info about case 3 · SOLVED' },
+  { type: 'CASE FILE', name: 'Case 4', link: 'case-files', extra: 'Info about case 4 · ARCHIVED' },
+  { type: 'INCIDENT', name: 'Incident 1', link: 'incidents', extra: 'Info about incident 1 · RESOLVED' },
+  { type: 'INCIDENT', name: 'Incident 2', link: 'incidents', extra: 'Info about incident 2 · RESOLVED' },
+  { type: 'TECH', name: 'LangChain', link: 'case-files', extra: 'Case 1' },
+  { type: 'TECH', name: 'Pinecone', link: 'case-files', extra: 'Case 2' },
+  { type: 'TECH', name: 'Redis', link: 'case-files', extra: 'Case 1' },
+  { type: 'TECH', name: 'Storybook', link: 'case-files', extra: 'Case 4' },
+  { type: 'TECH', name: 'FastAPI', link: 'case-files', extra: 'Case 2' },
+  { type: 'WITNESS', name: 'James Reeves — Nexus Labs', link: 'witnesses', extra: 'VERIFIED STATEMENT' },
+  { type: 'WITNESS', name: 'Sarah Chen — Orbital Systems', link: 'witnesses', extra: 'VERIFIED STATEMENT' },
+];
+
+const searchInput = document.getElementById('search-input');
+const searchResults = document.getElementById('search-results');
+
+searchInput.addEventListener('input', function() {
+  const q = this.value.trim().toLowerCase();
+  if (q.length < 2) { searchResults.classList.remove('visible'); return; }
+
+  const matches = searchData.filter(item =>
+    item.name.toLowerCase().includes(q) ||
+    item.type.toLowerCase().includes(q) ||
+    (item.extra && item.extra.toLowerCase().includes(q))
+  ).slice(0, 8);
+
+  if (matches.length === 0) {
+    searchResults.innerHTML = `<div class="sr-header">NO EVIDENCE FOUND FOR "${q.toUpperCase()}"</div>`;
+  } else {
+    searchResults.innerHTML = `<div class="sr-header">EVIDENCE RETRIEVED — ${matches.length} RESULT${matches.length > 1 ? 'S' : ''}</div>` +
+      matches.map(m => `
+        <div class="sr-item" onclick="scrollToSection('${m.link}'); searchResults.classList.remove('visible'); searchInput.value='';">
+          <div class="sr-type">${m.type}</div>
+          <div class="sr-name">${m.name}</div>
+          <div class="sr-link">→ ${m.extra}</div>
+        </div>
+      `).join('');
+  }
+  searchResults.classList.add('visible');
+});
+
+document.addEventListener('click', e => {
+  if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+    searchResults.classList.remove('visible');
+  }
+});
+
+searchInput.addEventListener('keydown', e => {
+  if (e.key === 'Escape') searchResults.classList.remove('visible');
+});
+
+// ─── NODE HOVER TOOLTIPS ───
+const svgNodes = document.querySelectorAll('.node-circle');
+svgNodes.forEach(node => {
+  node.addEventListener('mouseenter', function() {
+    this.style.transform = 'scale(1.05)';
+    this.style.transformOrigin = 'center';
+  });
+  node.addEventListener('mouseleave', function() {
+    this.style.transform = 'scale(1)';
+  });
+});
+
+// Skill bars on load (since intro hides page initially)
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.querySelectorAll('.skill-bar-fill').forEach(fill => {
+      fill.style.transition = 'width 1.5s cubic-bezier(0.4,0,0.2,1)';
+    });
+  }, 100);
+});
+
+// Intersection observer for skill bars post-intro
+const skillObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.querySelectorAll('.skill-bar-fill').forEach(fill => {
+        setTimeout(() => { fill.style.width = fill.dataset.width + '%'; }, 100);
+      });
+    }
+  });
+}, { threshold: 0.3 });
+
+const sg = document.getElementById('skills-grid');
+if (sg) skillObserver.observe(sg);
+</script>
+</body>
+</html>
