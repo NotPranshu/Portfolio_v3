@@ -1232,8 +1232,8 @@
   ::-webkit-scrollbar-thumb { background: var(--amber-dim); }
   ::-webkit-scrollbar-thumb:hover { background: var(--amber); }
 
-  /* ─── CRIMINAL PROFILE ─── */
-  #criminal-profile {
+  /* ─── SUBJECT PROFILE ─── */
+  #subject-profile {
     padding: 5rem 2rem;
     max-width: 1100px;
     margin: 0 auto;
@@ -1568,7 +1568,7 @@
     .incident-body { grid-template-columns: 1fr; }
     section { padding: 3rem 1rem; }
     #report { padding: 2rem 1rem; }
-    #criminal-profile { padding: 3rem 1rem; }
+    #subject-profile { padding: 3rem 1rem; }
   }
 </style>
 </head>
@@ -1602,7 +1602,7 @@
     </div>
     <nav>
       <a href="#board">BOARD</a>
-      <a href="#criminal-profile">PROFILE</a>
+      <a href="#subject-profile">PROFILE</a>
       <a href="#case-files">CASES</a>
       <a href="#skills">EVIDENCE</a>
       <a href="#incidents">INCIDENTS</a>
@@ -1663,7 +1663,7 @@
         </g>
 
         <!-- THREADS (connections) -->
-        <!-- Center to Criminal Profile -->
+        <!-- Center to Subject Profile -->
         <line x1="450" y1="253" x2="450" y2="80" class="thread" stroke="#FF2233" stroke-width="1.5" opacity="0.35" style="animation-delay:-3s"/>
         <!-- Center to Profile -->
         <line x1="450" y1="253" x2="225" y2="180" class="thread" stroke="#F5A623" stroke-width="1.5" opacity="0.4"/>
@@ -1680,11 +1680,11 @@
         <line x1="675" y1="150" x2="700" y2="340" stroke="rgba(0,255,65,0.12)" stroke-width="1" stroke-dasharray="4 6"/>
         <line x1="220" y1="370" x2="450" y2="420" stroke="rgba(255,34,51,0.12)" stroke-width="1" stroke-dasharray="4 6"/>
 
-        <!-- ── NODE: CRIMINAL PROFILE ── -->
-        <g id="node-criminal" class="node-circle" onclick="scrollToSection('criminal-profile')" style="cursor:crosshair">
+        <!-- ── NODE: SUBJECT PROFILE ── -->
+        <g id="node-subject" class="node-circle" onclick="scrollToSection('subject-profile')" style="cursor:crosshair">
           <circle cx="450" cy="80" r="44" fill="rgba(255,34,51,0.07)" stroke="#FF2233" stroke-width="1.5" filter="url(#glow-red)" opacity="0.9"/>
           <circle cx="450" cy="80" r="36" fill="transparent" stroke="rgba(255,34,51,0.3)" stroke-width="1" stroke-dasharray="3 3"/>
-          <text x="450" y="74" class="node-label" fill="#FF2233">CRIMINAL</text>
+          <text x="450" y="74" class="node-label" fill="#FF2233">SUBJECT</text>
           <text x="450" y="87" class="node-sub">PROFILE</text>
         </g>
 
@@ -1743,11 +1743,11 @@
     </div>
   </section>
 
-  <!-- ─── CRIMINAL PROFILE ─── -->
-  <section id="criminal-profile" style="padding: 5rem 2rem; max-width: 1100px; margin: 0 auto;">
+  <!-- ─── SUBJECT PROFILE ─── -->
+  <section id="subject-profile" style="padding: 5rem 2rem; max-width: 1100px; margin: 0 auto;">
     <div class="section-header">
       <div class="section-label" style="color: var(--red); border-color: var(--red);">SUBJECT</div>
-      <h2><span style="color:var(--red);">CRIMINAL</span> PROFILE</h2>
+      <h2><span style="color:var(--red);">SUBJECT</span> PROFILE</h2>
       <div class="section-rule" style="background: linear-gradient(to right, var(--red), transparent);"></div>
     </div>
 
@@ -2431,9 +2431,9 @@ function scrollToSection(id) {
 
 // ─── SEARCH SYSTEM ───
 const searchData = [
-  { type: 'PROFILE', name: 'Pranshu Ayush — Subject Identity', link: 'criminal-profile', extra: 'AGE 19 · Ba, Fiji · Fijian' },
-  { type: 'PROFILE', name: 'Psychological Profile', link: 'criminal-profile', extra: 'Threat Level: EXTREME' },
-  { type: 'PROFILE', name: 'Contact: thepranshuayush@gmail.com', link: 'criminal-profile', extra: 'Personal identification' },
+  { type: 'PROFILE', name: 'Pranshu Ayush — Subject Identity', link: 'subject-profile', extra: 'AGE 19 · Ba, Fiji · Fijian' },
+  { type: 'PROFILE', name: 'Psychological Profile', link: 'subject-profile', extra: 'Threat Level: EXTREME' },
+  { type: 'PROFILE', name: 'Contact: thepranshuayush@gmail.com', link: 'subject-profile', extra: 'Personal identification' },
   { type: 'SKILL', name: 'JavaScript / TypeScript', link: 'skills', extra: '3 years · 4 verified cases' },
   { type: 'SKILL', name: 'Python', link: 'skills', extra: '1 year · 3 verified cases' },
   { type: 'SKILL', name: 'React / Next.js', link: 'skills', extra: '1 year · 3 verified cases' },
