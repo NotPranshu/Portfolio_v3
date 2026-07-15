@@ -232,13 +232,13 @@
     50% { opacity: 0.6; }
   }
 
-  nav {
+  .site-nav {
     display: flex;
     gap: 1.5rem;
     align-items: center;
   }
 
-  nav a {
+  .site-nav a {
     font-family: 'Share Tech Mono', monospace;
     font-size: 0.7rem;
     color: var(--text-muted);
@@ -250,7 +250,7 @@
     border-bottom: 1px solid transparent;
   }
 
-  nav a:hover {
+  .site-nav a:hover {
     color: var(--amber);
     border-color: var(--amber);
   }
@@ -1561,14 +1561,222 @@
     filter: blur(1px);
   }
 
+  /* ─── MOBILE MENU TOGGLE ─── */
+  .mobile-menu-toggle {
+    display: none;
+    align-items: center;
+    gap: 0.4rem;
+    background: transparent;
+    border: 1px solid var(--amber-dim);
+    color: var(--amber);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    padding: 0.5rem 0.7rem;
+    cursor: crosshair;
+  }
+
+  .mobile-menu-toggle:hover,
+  .mobile-menu-toggle[aria-expanded="true"] {
+    background: rgba(245,166,35,0.1);
+    border-color: var(--amber);
+  }
+
+  /* ─── MOBILE NAV OVERLAY ─── */
+  #mobile-nav-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(5,5,5,0.98);
+    z-index: 500;
+    display: none;
+    flex-direction: column;
+    padding: 5.5rem 1.5rem 2rem;
+    overflow-y: auto;
+  }
+
+  #mobile-nav-overlay.visible { display: flex; }
+
+  .mnav-close {
+    position: absolute;
+    top: 1.1rem; right: 1.5rem;
+    background: none;
+    border: 1px solid var(--amber-dim);
+    color: var(--amber);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    padding: 0.4rem 0.7rem;
+    cursor: crosshair;
+    letter-spacing: 0.1em;
+  }
+
+  .mobile-nav-links {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 2rem;
+  }
+
+  .mobile-nav-links a {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-decoration: none;
+    letter-spacing: 0.08em;
+    padding: 1rem 0.25rem;
+    border-bottom: 1px solid var(--glass-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .mobile-nav-links a::after { content: '→'; color: var(--amber-dim); font-size: 0.85rem; }
+  .mobile-nav-links a:active,
+  .mobile-nav-links a:hover { color: var(--amber); }
+
+  .mobile-search-block { margin-bottom: 1.5rem; }
+
+  .search-wrap-mobile {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+  }
+
+  .search-wrap-mobile input {
+    background: rgba(245,166,35,0.05);
+    border: 1px solid var(--glass-border);
+    color: var(--amber);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.75rem;
+    padding: 0.6rem 1rem 0.6rem 2.2rem;
+    letter-spacing: 0.05em;
+    outline: none;
+    width: 100%;
+  }
+
+  .search-wrap-mobile input:focus {
+    border-color: var(--amber);
+    background: rgba(245,166,35,0.1);
+    box-shadow: 0 0 20px rgba(245,166,35,0.15);
+  }
+
+  .search-wrap-mobile input::placeholder { color: var(--amber-dim); }
+
+  #search-results-mobile {
+    position: relative;
+    width: 100%;
+    margin-top: 0.5rem;
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid var(--amber);
+    background: var(--panel);
+    display: none;
+  }
+
+  #search-results-mobile.visible { display: block; }
+
+  /* ─── MOBILE EVIDENCE GRID (replaces SVG board on small screens) ─── */
+  .evidence-board-mobile {
+    display: none;
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  .eb-mobile-label {
+    text-align: center;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--amber-dim);
+    letter-spacing: 0.25em;
+    margin-bottom: 1rem;
+  }
+
+  .eb-mobile-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+
+  .eb-node {
+    border: 1.5px solid var(--node-color);
+    background: var(--node-bg);
+    color: var(--node-color);
+    padding: 1.1rem 0.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    text-align: center;
+    cursor: crosshair;
+    transition: background 0.2s, transform 0.15s;
+  }
+
+  .eb-node:active { transform: scale(0.97); background: var(--node-color); color: var(--void); }
+
+  .eb-node-mark { font-size: 1.2rem; line-height: 1; }
+
+  .eb-node-label {
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    line-height: 1.4;
+  }
+
+  .eb-node-sub {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.52rem;
+    color: var(--text-muted);
+    letter-spacing: 0.15em;
+    display: block;
+    margin-top: 0.15rem;
+  }
+
   @media(max-width:768px){
-    nav { display: none; }
-    .search-wrap input { width: 150px; }
+    .site-nav { display: none; }
+    header .search-wrap { display: none; }
+    header .status-tag { display: none; }
+    .mobile-menu-toggle { display: inline-flex; }
+    #evidence-board { display: none; }
+    .evidence-board-mobile { display: block; }
+    header { padding: 0.65rem 1rem; }
+    .badge-icon { width: 32px; height: 32px; font-size: 0.9rem; }
+    .badge-name { font-size: 0.85rem; }
+    #intro { padding: 1rem; }
+    .terminal-window { padding: 1.5rem 1.25rem; }
+    .terminal-window::before { font-size: 0.5rem; letter-spacing: 0.1em; padding: 0 0.5rem; }
+    #terminal-text { font-size: 0.7rem; }
+    .term-line.big { font-size: 1.1rem; letter-spacing: 0.12em; }
     h1 { font-size: 2rem; }
+    .case-number { letter-spacing: 0.15em; }
+    .board-sub { letter-spacing: 0.1em; }
     .incident-body { grid-template-columns: 1fr; }
+    .incident-header { flex-wrap: wrap; gap: 0.5rem; }
     section { padding: 3rem 1rem; }
     #report { padding: 2rem 1rem; }
     #subject-profile { padding: 3rem 1rem; }
+    .cases-grid, .witnesses-grid { grid-template-columns: 1fr; }
+    .skills-grid { grid-template-columns: repeat(2, 1fr); }
+    .cp-tape {
+      flex-wrap: wrap;
+      justify-content: center;
+      text-align: center;
+      gap: 0.4rem;
+      letter-spacing: 0.12em;
+      font-size: 0.58rem;
+      padding: 0.6rem 1rem;
+    }
+    .report-cta { flex-direction: column; }
+    .report-cta .btn { width: 100%; text-align: center; }
+    .modal-box { padding: 1.5rem; }
+    #modal-content .detail-row { flex-direction: column; gap: 0.2rem; }
+    #modal-content .detail-label { min-width: 0; }
+  }
+
+  @media(max-width:420px){
+    .badge-text { display: none; }
+    .eb-mobile-grid { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -1600,7 +1808,7 @@
         <div class="badge-name glitch" data-text="PRANSHU AYUSH">PRANSHU AYUSH</div>
       </div>
     </div>
-    <nav>
+    <nav class="site-nav" aria-label="Primary">
       <a href="#board">BOARD</a>
       <a href="#subject-profile">PROFILE</a>
       <a href="#case-files">CASES</a>
@@ -1608,7 +1816,7 @@
       <a href="#incidents">INCIDENTS</a>
       <a href="#witnesses">WITNESSES</a>
       <a href="#timeline">TIMELINE</a>
-      <a href="#report">REPORT</a>
+      <a href="#report-section">REPORT</a>
     </nav>
     <div class="search-wrap">
       <span class="search-icon">⌕</span>
@@ -1618,7 +1826,31 @@
       </div>
     </div>
     <div class="status-tag open">● CASE OPEN</div>
+    <button type="button" class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle navigation menu" aria-expanded="false">☰ MENU</button>
   </header>
+
+  <!-- MOBILE NAV OVERLAY -->
+  <div id="mobile-nav-overlay" role="dialog" aria-modal="true" aria-label="Mobile navigation">
+    <button type="button" class="mnav-close" id="mobileMenuClose">[ CLOSE ]</button>
+    <nav class="mobile-nav-links" aria-label="Mobile">
+      <a href="#board">BOARD</a>
+      <a href="#subject-profile">PROFILE</a>
+      <a href="#case-files">CASES</a>
+      <a href="#skills">EVIDENCE</a>
+      <a href="#incidents">INCIDENTS</a>
+      <a href="#witnesses">WITNESSES</a>
+      <a href="#timeline">TIMELINE</a>
+      <a href="#report-section">REPORT</a>
+    </nav>
+    <div class="mobile-search-block">
+      <div class="search-wrap-mobile">
+        <span class="search-icon">⌕</span>
+        <input type="text" id="search-input-mobile" placeholder="QUERY DATABASE...">
+      </div>
+      <div id="search-results-mobile"></div>
+    </div>
+    <div class="status-tag open" style="align-self:center;">● CASE OPEN</div>
+  </div>
 
   <!-- INVESTIGATION BOARD -->
   <section id="board" style="padding-top: 7rem; max-width:100%; padding-bottom: 2rem;">
@@ -1740,6 +1972,37 @@
         <text x="22" y="16" font-family="Share Tech Mono, monospace" font-size="8" fill="rgba(245,166,35,0.3)" letter-spacing="1">LAT 36.7°N / LON 119.4°W</text>
         <text x="878" y="16" font-family="Share Tech Mono, monospace" font-size="8" fill="rgba(245,166,35,0.3)" letter-spacing="1" text-anchor="end">MONITORING ACTIVE</text>
       </svg>
+    </div>
+
+    <!-- EVIDENCE BOARD (MOBILE) -->
+    <div class="evidence-board-mobile">
+      <div class="eb-mobile-label">[ TAP A NODE TO INVESTIGATE ]</div>
+      <div class="eb-mobile-grid">
+        <div class="eb-node" style="--node-color:#FF2233; --node-bg:rgba(255,34,51,0.08);" onclick="scrollToSection('subject-profile')">
+          <span class="eb-node-mark">◉</span>
+          <span class="eb-node-label">SUBJECT<span class="eb-node-sub">PROFILE</span></span>
+        </div>
+        <div class="eb-node" style="--node-color:#4A90D9; --node-bg:rgba(74,144,217,0.08);" onclick="openModal('profile')">
+          <span class="eb-node-mark">◉</span>
+          <span class="eb-node-label">PROFILE<span class="eb-node-sub">ID CONFIRMED</span></span>
+        </div>
+        <div class="eb-node" style="--node-color:#00FF41; --node-bg:rgba(0,255,65,0.06);" onclick="scrollToSection('skills')">
+          <span class="eb-node-mark">◉</span>
+          <span class="eb-node-label">SKILLS<span class="eb-node-sub">EVIDENCE DB</span></span>
+        </div>
+        <div class="eb-node" style="--node-color:#F5A623; --node-bg:rgba(245,166,35,0.08);" onclick="scrollToSection('case-files')">
+          <span class="eb-node-mark">◉</span>
+          <span class="eb-node-label">PROJECTS<span class="eb-node-sub">CASE FILES</span></span>
+        </div>
+        <div class="eb-node" style="--node-color:#FF2233; --node-bg:rgba(255,34,51,0.08);" onclick="scrollToSection('incidents')">
+          <span class="eb-node-mark">◉</span>
+          <span class="eb-node-label">INCIDENTS<span class="eb-node-sub">REPORTS</span></span>
+        </div>
+        <div class="eb-node" style="--node-color:#F5A623; --node-bg:rgba(245,166,35,0.06);" onclick="scrollToSection('timeline')">
+          <span class="eb-node-mark">◉</span>
+          <span class="eb-node-label">TIMELINE<span class="eb-node-sub">OF EVENTS</span></span>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -2220,7 +2483,7 @@
   </section>
 
   <!-- ─── FINAL REPORT ─── -->
-  <section id="report">
+  <section id="report-section">
     <div id="report" style="background: rgba(10,10,10,0.9); border: 1px solid var(--amber); padding: 3rem; position: relative; max-width: 860px; margin: 0 auto;">
       <div class="report-stamp">CLEARED</div>
       <div class="report-title">FORENSICS DIVISION — FINAL ASSESSMENT REPORT / CASE № FD-2024-0042</div>
@@ -2397,7 +2660,7 @@ const modals = {
       <div class="detail-row"><span class="detail-label">OBJECTIVE</span><span class="detail-val">Accessible component library for 12 internal products</span></div>
       <div class="detail-row"><span class="detail-label">STACK</span><span class="detail-val">TypeScript, React, Storybook, Tailwind, Figma, Jest</span></div>
       <div class="detail-row"><span class="detail-label">DURATION</span><span class="detail-val">16 Weeks</span></div>
-      <div class="detail-row"><span class="detail-label">OUTCOME</span><span class="detail-val" style="color:#4A90D9)">200+ components. WCAG AA compliant. Adopted by 12 teams.</span></div>
+      <div class="detail-row"><span class="detail-label">OUTCOME</span><span class="detail-val" style="color:#4A90D9">200+ components. WCAG AA compliant. Adopted by 12 teams.</span></div>
       <p style="margin-top:1.5rem;"><strong style="color:var(--amber)">INVESTIGATION NOTES:</strong> Full design token system, automated accessibility audits in CI, visual regression testing via Chromatic. Reduced UI development time by 55% across product teams in the 6 months post-launch.</p>
     `
   }
@@ -2429,6 +2692,34 @@ function scrollToSection(id) {
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+// ─── MOBILE MENU ───
+const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+const mobileNavOverlay = document.getElementById('mobile-nav-overlay');
+const mobileMenuClose = document.getElementById('mobileMenuClose');
+
+function openMobileMenu() {
+  mobileNavOverlay.classList.add('visible');
+  mobileMenuToggle.setAttribute('aria-expanded', 'true');
+  mobileMenuToggle.textContent = '✕ CLOSE';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeMobileMenu() {
+  mobileNavOverlay.classList.remove('visible');
+  mobileMenuToggle.setAttribute('aria-expanded', 'false');
+  mobileMenuToggle.textContent = '☰ MENU';
+  document.body.style.overflow = '';
+}
+
+mobileMenuToggle.addEventListener('click', () => {
+  mobileNavOverlay.classList.contains('visible') ? closeMobileMenu() : openMobileMenu();
+});
+mobileMenuClose.addEventListener('click', closeMobileMenu);
+document.querySelectorAll('.mobile-nav-links a').forEach(a => {
+  a.addEventListener('click', closeMobileMenu);
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMobileMenu(); });
+
 // ─── SEARCH SYSTEM ───
 const searchData = [
   { type: 'PROFILE', name: 'Pranshu Ayush — Subject Identity', link: 'subject-profile', extra: 'AGE 19 · Ba, Fiji · Fijian' },
@@ -2457,42 +2748,50 @@ const searchData = [
   { type: 'WITNESS', name: 'Sarah Chen — Orbital Systems', link: 'witnesses', extra: 'VERIFIED STATEMENT' },
 ];
 
-const searchInput = document.getElementById('search-input');
-const searchResults = document.getElementById('search-results');
+function wireSearch(inputEl, resultsEl) {
+  if (!inputEl || !resultsEl) return;
 
-searchInput.addEventListener('input', function() {
-  const q = this.value.trim().toLowerCase();
-  if (q.length < 2) { searchResults.classList.remove('visible'); return; }
+  inputEl.addEventListener('input', function() {
+    const q = this.value.trim().toLowerCase();
+    if (q.length < 2) { resultsEl.classList.remove('visible'); return; }
 
-  const matches = searchData.filter(item =>
-    item.name.toLowerCase().includes(q) ||
-    item.type.toLowerCase().includes(q) ||
-    (item.extra && item.extra.toLowerCase().includes(q))
-  ).slice(0, 8);
+    const matches = searchData.filter(item =>
+      item.name.toLowerCase().includes(q) ||
+      item.type.toLowerCase().includes(q) ||
+      (item.extra && item.extra.toLowerCase().includes(q))
+    ).slice(0, 8);
 
-  if (matches.length === 0) {
-    searchResults.innerHTML = `<div class="sr-header">NO EVIDENCE FOUND FOR "${q.toUpperCase()}"</div>`;
-  } else {
-    searchResults.innerHTML = `<div class="sr-header">EVIDENCE RETRIEVED — ${matches.length} RESULT${matches.length > 1 ? 'S' : ''}</div>` +
-      matches.map(m => `
-        <div class="sr-item" onclick="scrollToSection('${m.link}'); searchResults.classList.remove('visible'); searchInput.value='';">
-          <div class="sr-type">${m.type}</div>
-          <div class="sr-name">${m.name}</div>
-          <div class="sr-link">→ ${m.extra}</div>
-        </div>
-      `).join('');
-  }
-  searchResults.classList.add('visible');
-});
+    if (matches.length === 0) {
+      resultsEl.innerHTML = `<div class="sr-header">NO EVIDENCE FOUND FOR "${q.toUpperCase()}"</div>`;
+    } else {
+      resultsEl.innerHTML = `<div class="sr-header">EVIDENCE RETRIEVED — ${matches.length} RESULT${matches.length > 1 ? 'S' : ''}</div>` +
+        matches.map(m => `
+          <div class="sr-item" onclick="scrollToSection('${m.link}'); document.getElementById('${resultsEl.id}').classList.remove('visible'); document.getElementById('${inputEl.id}').value=''; closeMobileMenu();">
+            <div class="sr-type">${m.type}</div>
+            <div class="sr-name">${m.name}</div>
+            <div class="sr-link">→ ${m.extra}</div>
+          </div>
+        `).join('');
+    }
+    resultsEl.classList.add('visible');
+  });
+
+  inputEl.addEventListener('keydown', e => { if (e.key === 'Escape') resultsEl.classList.remove('visible'); });
+}
+
+const searchPairs = [
+  [document.getElementById('search-input'), document.getElementById('search-results')],
+  [document.getElementById('search-input-mobile'), document.getElementById('search-results-mobile')]
+];
+
+searchPairs.forEach(([inp, res]) => wireSearch(inp, res));
 
 document.addEventListener('click', e => {
-  if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
-    searchResults.classList.remove('visible');
-  }
-});
-
-searchInput.addEventListener('keydown', e => {
-  if (e.key === 'Escape') searchResults.classList.remove('visible');
+  searchPairs.forEach(([inp, res]) => {
+    if (inp && res && !inp.contains(e.target) && !res.contains(e.target)) {
+      res.classList.remove('visible');
+    }
+  });
 });
 
 // ─── NODE HOVER TOOLTIPS ───
