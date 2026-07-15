@@ -1733,11 +1733,59 @@
     margin-top: 0.15rem;
   }
 
+  /* ─── BACK TO TOP (MOBILE ONLY) ─── */
+  .back-to-top {
+    display: none;
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.25rem;
+    z-index: 400;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: 2px solid var(--amber);
+    background: rgba(10,10,10,0.92);
+    color: var(--amber);
+    cursor: crosshair;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.05rem;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(12px) scale(0.9);
+    transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s, background 0.2s;
+  }
+
+  .back-to-top .btt-arrow { font-size: 1rem; line-height: 1; }
+
+  .back-to-top .btt-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.45rem;
+    letter-spacing: 0.15em;
+  }
+
+  .back-to-top:active {
+    background: var(--amber);
+    color: var(--void);
+    transform: translateY(0) scale(0.95);
+  }
+
+  .back-to-top.visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+    animation: badgePulse 3s ease-in-out infinite;
+  }
+
   @media(max-width:768px){
     .site-nav { display: none; }
     header .search-wrap { display: none; }
     header .status-tag { display: none; }
     .mobile-menu-toggle { display: inline-flex; }
+    .back-to-top { display: flex; }
     #evidence-board { display: none; }
     .evidence-board-mobile { display: block; }
     header { padding: 0.65rem 1rem; }
@@ -2534,6 +2582,12 @@
 
 </div><!-- /main -->
 
+<!-- BACK TO TOP (MOBILE ONLY) -->
+<button type="button" id="backToTop" class="back-to-top" aria-label="Back to top of case file">
+  <span class="btt-arrow">▲</span>
+  <span class="btt-label">TOP</span>
+</button>
+
 <!-- MODAL -->
 <div id="modal-overlay" onclick="closeModal(event)">
   <div class="modal-box">
@@ -2719,6 +2773,22 @@ document.querySelectorAll('.mobile-nav-links a').forEach(a => {
   a.addEventListener('click', closeMobileMenu);
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMobileMenu(); });
+
+// ─── BACK TO TOP (MOBILE ONLY) ───
+const backToTop = document.getElementById('backToTop');
+if (backToTop) {
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 500) {
+      backToTop.classList.add('visible');
+    } else {
+      backToTop.classList.remove('visible');
+    }
+  }, { passive: true });
+
+  backToTop.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+}
 
 // ─── SEARCH SYSTEM ───
 const searchData = [
